@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle Alta #{{ alta.id }} - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-12">
+        <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a la lista
+        </a>
+    </div>
+</div>
+
+<!-- Header con estado -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3>Alta #{{ alta.id }} - {{ alta.madre.nombre }}</h3>
+                        <p class="text-muted mb-0">RUT: {{ alta.madre.rut }}</p>
+                    </div>
+                    <div class="text-end">
+                        {% if alta.estado == 'completada' %}
+                            <span class="badge bg-success fs-5">{{ alta.get_estado_display }}</span>
+                        {% elif alta.estado == 'pendiente' %}
+                            <span class="badge bg-warning text-dark fs-5">{{ alta.get_estado_display }}</span>
+                        {% else %}
+                            <span class="badge bg-info fs-5">{{ alta.get_estado_display }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Validación de Registros -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card {% if alta.registros_completos %}border-success{% else %}border-warning{% endif %}">
+            <div class="card-header {% if alta.registros_completos %}bg-success text-white{% else %}bg-warning{% endif %}">
+                <h5 class="mb-0">
+                    <i class="bi bi-clipboard-check"></i> Validación de Registros
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if alta.registros_completos %}
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-check-circle-fill"></i> Todos los registros están completos
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill"></i> 
+                        <strong>Registros incompletos:</strong><br>
+                        {{ alta.observaciones_validacion }}
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" name="validar" class="btn btn-warning">
+                            <i class="bi bi-arrow-repeat"></i> Revalidar Registros
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Datos de la Madre -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-fill"></i> Datos de la Madre</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <th width="40%">Nombre:</th>
+                        <td>{{ alta.madre.nombre }}</td>
+                    </tr>
+                    <tr>
+                        <th>RUT:</th>
+                        <td>{{ alta.madre.rut }}</td>
+                    </tr>
+                    <tr>
+                        <th>Edad:</th>
+                        <td>{{ alta.madre.edad }} años</td>
+                    </tr>
+                    <tr>
+                        <th>Dirección:</th>
+                        <td>{{ alta.madre.direccion }}</td>
+                    </tr>
+                    <tr>
+                        <th>Teléfono:</th>
+                        <td>{{ alta.madre.telefono }}</td>
+                    </tr>
+                    <tr>
+                        <th>Controles prenatales:</th>
+                        <td>{{ alta.madre.controles_prenatales }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Datos del Parto -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-activity"></i> Datos del Parto</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <th width="40%">Tipo:</th>
+                        <td>{{ alta.parto.get_tipo_display }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha/Hora inicio:</th>
+                        <td>{{ alta.parto.fecha_hora_inicio|date:"d/m/Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha/Hora término:</th>
+                        <td>{{ alta.parto.fecha_hora_termino|date:"d/m/Y H:i"|default:"Pendiente" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Médico:</th>
+                        <td>{{ alta.parto.medico_responsable }}</td>
+                    </tr>
+                    <tr>
+                        <th>Matrona:</th>
+                        <td>{{ alta.parto.matrona_responsable }}</td>
+                    </tr>
+                    <tr>
+                        <th>Complicaciones:</th>
+                        <td>
+                            {% if alta.parto.tuvo_complicaciones %}
+                                <span class="badge bg-warning text-dark">Sí</span>
+                            {% else %}
+                                <span class="badge bg-success">No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Datos del Recién Nacido -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-heart-fill"></i> Datos del Recién Nacido</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">Código único:</th>
+                                <td><span class="badge bg-info">{{ alta.recien_nacido.codigo_unico }}</span></td>
+                            </tr>
+                            <tr>
+                                <th>Sexo:</th>
+                                <td>{{ alta.recien_nacido.get_sexo_display }}</td>
+                            </tr>
+                            <tr>
+                                <th>Peso:</th>
+                                <td>{{ alta.recien_nacido.peso }} kg</td>
+                            </tr>
+                            <tr>
+                                <th>Talla:</th>
+                                <td>{{ alta.recien_nacido.talla }} cm</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">APGAR 1 min:</th>
+                                <td>
+                                    <span class="badge {% if alta.recien_nacido.apgar_1_min < 7 %}bg-danger{% else %}bg-success{% endif %}">
+                                        {{ alta.recien_nacido.apgar_1_min }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>APGAR 5 min:</th>
+                                <td>
+                                    <span class="badge {% if alta.recien_nacido.apgar_5_min < 7 %}bg-danger{% else %}bg-success{% endif %}">
+                                        {{ alta.recien_nacido.apgar_5_min }}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Condición:</th>
+                                <td>{{ alta.recien_nacido.get_condicion_nacimiento_display }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Proceso de Confirmación de Altas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card {% if alta.alta_clinica_confirmada %}border-success{% endif %}">
+            <div class="card-header {% if alta.alta_clinica_confirmada %}bg-success text-white{% else %}bg-light{% endif %}">
+                <h5 class="mb-0">
+                    <i class="bi bi-hospital"></i> Alta Clínica
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if alta.alta_clinica_confirmada %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle-fill"></i> <strong>Confirmada</strong>
+                    </div>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Médico:</th>
+                            <td>{{ alta.medico_confirma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha:</th>
+                            <td>{{ alta.fecha_confirmacion_clinica|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                    </table>
+                {% else %}
+                    {% if puede_confirmar_clinica %}
+                        <p>El alta clínica puede ser confirmada.</p>
+                        <a href="{% url 'altas:confirmar_alta_clinica' alta.pk %}" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Confirmar Alta Clínica
+                        </a>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Los registros deben estar completos antes de confirmar.
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card {% if alta.alta_administrativa_confirmada %}border-success{% endif %}">
+            <div class="card-header {% if alta.alta_administrativa_confirmada %}bg-success text-white{% else %}bg-light{% endif %}">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-text"></i> Alta Administrativa
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if alta.alta_administrativa_confirmada %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle-fill"></i> <strong>Confirmada</strong>
+                    </div>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Administrativo:</th>
+                            <td>{{ alta.administrativo_confirma }}</td>
+                        </tr>
+                        <tr>
+                            <th>Fecha:</th>
+                            <td>{{ alta.fecha_confirmacion_administrativa|date:"d/m/Y H:i" }}</td>
+                        </tr>
+                    </table>
+                {% else %}
+                    {% if puede_confirmar_administrativa %}
+                        <p>El alta administrativa puede ser confirmada.</p>
+                        <a href="{% url 'altas:confirmar_alta_administrativa' alta.pk %}" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Confirmar Alta Administrativa
+                        </a>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> Debe confirmarse primero el alta clínica.
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Certificado -->
+{% if alta.esta_completada %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-file-pdf"></i> Certificado de Alta</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Alta completada el:</strong> {{ alta.fecha_alta|date:"d/m/Y H:i" }}</p>
+                <a href="{% url 'altas:descargar_certificado' alta.pk %}" class="btn btn-danger" target="_blank">
+                    <i class="bi bi-file-pdf"></i> Descargar Certificado PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Observaciones -->
+{% if alta.observaciones %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Observaciones</h5>
+            </div>
+            <div class="card-body">
+                <p style="white-space: pre-line;">{{ alta.observaciones }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

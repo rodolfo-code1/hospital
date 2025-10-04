@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block title %}Crear Nueva Alta - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> {{ titulo }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        {{ form.madre.label_tag }}
+                        {{ form.madre }}
+                        {% if form.madre.errors %}
+                            <div class="text-danger">{{ form.madre.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Selecciona la madre para iniciar el proceso de alta</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.parto.label_tag }}
+                        {{ form.parto }}
+                        {% if form.parto.errors %}
+                            <div class="text-danger">{{ form.parto.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Selecciona el parto correspondiente</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.recien_nacido.label_tag }}
+                        {{ form.recien_nacido }}
+                        {% if form.recien_nacido.errors %}
+                            <div class="text-danger">{{ form.recien_nacido.errors }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Selecciona el recién nacido</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.observaciones.label_tag }}
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}
+                            <div class="text-danger">{{ form.observaciones.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Crear Alta
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-3">
+            <i class="bi bi-info-circle"></i> <strong>Nota:</strong> Al crear el alta, el sistema validará automáticamente que todos los registros estén completos.
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Trazabilidad{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'altas:lista_altas' %}">
+                <i class="bi bi-hospital"></i> Sistema Trazabilidad
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'altas:lista_altas' %}">
+                            <i class="bi bi-list-ul"></i> Altas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'altas:crear_alta' %}">
+                            <i class="bi bi-plus-circle"></i> Nueva Alta
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'altas:historial_altas' %}">
+                            <i class="bi bi-clock-history"></i> Historial
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'altas:exportar_excel' %}">
+                            <i class="bi bi-file-earmark-excel"></i> Exportar
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/" target="_blank">
+                            <i class="bi bi-gear"></i> Admin
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mensajes -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Contenido principal -->
+    <main class="container py-4">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <p class="mb-0">&copy; 2025 Sistema de Trazabilidad - Módulo 4: Altas y Procesos Administrativos</p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

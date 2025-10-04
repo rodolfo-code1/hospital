@@ -1,0 +1,5 @@
+# partos/urls.py
+from django.urls import path
+
+app_name = 'partos'
+urlpatterns = []

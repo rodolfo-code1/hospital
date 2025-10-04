@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Alta {{ tipo_confirmacion|title }} - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-check-circle"></i> Confirmar Alta {{ tipo_confirmacion|title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- Resumen del alta -->
+                <div class="alert alert-info">
+                    <h5><i class="bi bi-info-circle"></i> Información del Alta</h5>
+                    <table class="table table-sm table-borderless mb-0">
+                        <tr>
+                            <th width="30%">Alta #:</th>
+                            <td>{{ alta.id }}</td>
+                        </tr>
+                        <tr>
+                            <th>Madre:</th>
+                            <td>{{ alta.madre.nombre }} ({{ alta.madre.rut }})</td>
+                        </tr>
+                        <tr>
+                            <th>Recién Nacido:</th>
+                            <td>{{ alta.recien_nacido.codigo_unico }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tipo de Parto:</th>
+                            <td>{{ alta.parto.get_tipo_display }}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Formulario de confirmación -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        {% for field in form %}
+                            <div class="mb-3">
+                                {% if field.field.widget.input_type == 'checkbox' %}
+                                    <div class="form-check">
+                                        {{ field }}
+                                        <label class="form-check-label" for="{{ field.id_for_label }}">
+                                            {{ field.label }}
+                                        </label>
+                                    </div>
+                                {% else %}
+                                    {{ field.label_tag }}
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                {% endif %}
+                                
+                                {% if field.errors %}
+                                    <div class="text-danger">
+                                        {{ field.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        <strong>Importante:</strong> Al confirmar esta alta {{ tipo_confirmacion }}, 
+                        se registrará su nombre y fecha de confirmación de forma permanente en el sistema.
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'altas:detalle_alta' alta.pk %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Confirmar Alta {{ tipo_confirmacion|title }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

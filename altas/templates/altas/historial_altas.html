@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de Altas - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="bi bi-clock-history"></i> Historial de Altas Completadas</h2>
+        <p class="text-muted">Registro de todas las altas completadas con trazabilidad completa</p>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h5><i class="bi bi-bar-chart"></i> Total de Altas Completadas: <strong>{{ total }}</strong></h5>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-dark text-white">
+        <h5 class="mb-0">Listado Histórico</h5>
+    </div>
+    <div class="card-body">
+        {% if altas %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Madre</th>
+                        <th>RUT</th>
+                        <th>Código RN</th>
+                        <th>Tipo Parto</th>
+                        <th>Médico</th>
+                        <th>Administrativo</th>
+                        <th>Fecha Alta</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alta in altas %}
+                    <tr>
+                        <td>{{ alta.id }}</td>
+                        <td>{{ alta.madre.nombre }}</td>
+                        <td>{{ alta.madre.rut }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ alta.recien_nacido.codigo_unico }}</span>
+                        </td>
+                        <td>{{ alta.parto.get_tipo_display }}</td>
+                        <td>{{ alta.medico_confirma }}</td>
+                        <td>{{ alta.administrativo_confirma }}</td>
+                        <td>{{ alta.fecha_alta|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'altas:detalle_alta' alta.pk %}" 
+                               class="btn btn-sm btn-primary" 
+                               title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'altas:descargar_certificado' alta.pk %}" 
+                               class="btn btn-sm btn-danger" 
+                               title="Descargar certificado"
+                               target="_blank">
+                                <i class="bi bi-file-pdf"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay altas completadas en el historial.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <a href="{% url 'altas:exportar_excel' %}?estado=completada" class="btn btn-success">
+            <i class="bi bi-file-earmark-excel"></i> Exportar Historial a Excel
+        </a>
+        <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Lista de Altas
+        </a>
+    </div>
+</div>
+{% endblock %}

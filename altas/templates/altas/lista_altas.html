@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Altas - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2><i class="bi bi-clipboard-check"></i> Gestión de Altas</h2>
+        <p class="text-muted">Módulo 4: Altas y Procesos Administrativos</p>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-list-check"></i> Total de Altas</h5>
+                <h2>{{ total_altas }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-hourglass-split"></i> Pendientes</h5>
+                <h2>{{ pendientes }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-check-circle"></i> Completadas</h5>
+                <h2>{{ completadas }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Formulario de búsqueda -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0"><i class="bi bi-search"></i> Filtros de Búsqueda</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" action="">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    {{ form_buscar.buscar.label_tag }}
+                    {{ form_buscar.buscar }}
+                </div>
+                <div class="col-md-3">
+                    {{ form_buscar.estado.label_tag }}
+                    {{ form_buscar.estado }}
+                </div>
+                <div class="col-md-2">
+                    {{ form_buscar.fecha_desde.label_tag }}
+                    {{ form_buscar.fecha_desde }}
+                </div>
+                <div class="col-md-2">
+                    {{ form_buscar.fecha_hasta.label_tag }}
+                    {{ form_buscar.fecha_hasta }}
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Tabla de altas -->
+<div class="card">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Lista de Altas</h5>
+        <a href="{% url 'altas:crear_alta' %}" class="btn btn-success btn-sm">
+            <i class="bi bi-plus-circle"></i> Nueva Alta
+        </a>
+    </div>
+    <div class="card-body">
+        {% if altas %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Madre</th>
+                        <th>RUT</th>
+                        <th>Código RN</th>
+                        <th>Estado</th>
+                        <th>Registros</th>
+                        <th>Alta Clínica</th>
+                        <th>Alta Admin.</th>
+                        <th>Fecha Creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alta in altas %}
+                    <tr>
+                        <td>{{ alta.id }}</td>
+                        <td>{{ alta.madre.nombre }}</td>
+                        <td>{{ alta.madre.rut }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ alta.recien_nacido.codigo_unico }}</span>
+                        </td>
+                        <td>
+                            {% if alta.estado == 'completada' %}
+                                <span class="badge bg-success">{{ alta.get_estado_display }}</span>
+                            {% elif alta.estado == 'pendiente' %}
+                                <span class="badge bg-warning text-dark">{{ alta.get_estado_display }}</span>
+                            {% else %}
+                                <span class="badge bg-info">{{ alta.get_estado_display }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if alta.registros_completos %}
+                                <span class="text-success"><i class="bi bi-check-circle-fill"></i></span>
+                            {% else %}
+                                <span class="text-danger"><i class="bi bi-x-circle-fill"></i></span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if alta.alta_clinica_confirmada %}
+                                <span class="text-success"><i class="bi bi-check-circle-fill"></i></span>
+                            {% else %}
+                                <span class="text-secondary"><i class="bi bi-dash-circle"></i></span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if alta.alta_administrativa_confirmada %}
+                                <span class="text-success"><i class="bi bi-check-circle-fill"></i></span>
+                            {% else %}
+                                <span class="text-secondary"><i class="bi bi-dash-circle"></i></span>
+                            {% endif %}
+                        </td>
+                        <td>{{ alta.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'altas:detalle_alta' alta.pk %}" class="btn btn-sm btn-primary" title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            {% if alta.esta_completada %}
+                            <a href="{% url 'altas:descargar_certificado' alta.pk %}" class="btn btn-sm btn-danger" title="Descargar PDF">
+                                <i class="bi bi-file-pdf"></i>
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay altas registradas. 
+            <a href="{% url 'altas:crear_alta' %}" class="alert-link">Crear la primera alta</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
