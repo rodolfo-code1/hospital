@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Perfil - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-person-circle"></i> Mi Perfil</h4>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <tr>
+                        <th width="30%">RUT (Usuario):</th>
+                        <td>{{ user.rut }}</td>
+                    </tr>
+                    <tr>
+                        <th>Nombre completo:</th>
+                        <td>{{ user.get_full_name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ user.email|default:"No especificado" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Teléfono:</th>
+                        <td>{{ user.telefono|default:"No especificado" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Cargo / Rol:</th>
+                        <td>
+                            <span class="badge bg-primary fs-6">{{ user.get_rol_display }}</span>
+                        </td>
+                    </tr>
+                </table>
+                
+                <div class="alert alert-info">
+                    <strong><i class="bi bi-info-circle"></i> Permisos de tu rol:</strong>
+                    <ul class="mb-0 mt-2">
+                        {% if user.rol == 'medico' %}
+                            <li>Registrar partos y recién nacidos</li>
+                            <li>Confirmar altas clínicas</li>
+                            <li>Ver historial completo</li>
+                        {% elif user.rol == 'matrona' %}
+                            <li>Registrar madres, partos y recién nacidos</li>
+                            <li>Ver historial completo</li>
+                        {% elif user.rol == 'administrativo' %}
+                            <li>Registrar madres</li>
+                            <li>Confirmar altas administrativas</li>
+                            <li>Exportar reportes</li>
+                        {% elif user.rol == 'enfermero' %}
+                            <li>Registrar recién nacidos</li>
+                            <li>Ver información clínica</li>
+                        {% elif user.rol == 'jefatura' %}
+                            <li>Acceso total al sistema</li>
+                            <li>Todos los permisos disponibles</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver al Inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

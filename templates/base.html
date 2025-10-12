@@ -27,14 +27,41 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+                    {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'altas:lista_altas' %}">
                             <i class="bi bi-list-ul"></i> Altas
                         </a>
                     </li>
+                    
+                    {% if user.rol == 'matrona' or user.rol == 'administrativo' or user.rol == 'medico' or user.rol == 'enfermero' or user.rol == 'jefatura' %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-plus-circle"></i> Registrar
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% if user.rol == 'matrona' or user.rol == 'administrativo' or user.rol == 'jefatura' %}
+                            <li><a class="dropdown-item" href="{% url 'altas:registrar_madre' %}">
+                                <i class="bi bi-person-plus"></i> Nueva Madre
+                            </a></li>
+                            {% endif %}
+                            {% if user.rol == 'matrona' or user.rol == 'medico' or user.rol == 'jefatura' %}
+                            <li><a class="dropdown-item" href="{% url 'altas:registrar_parto' %}">
+                                <i class="bi bi-activity"></i> Nuevo Parto
+                            </a></li>
+                            {% endif %}
+                            {% if user.rol == 'matrona' or user.rol == 'medico' or user.rol == 'enfermero' or user.rol == 'jefatura' %}
+                            <li><a class="dropdown-item" href="{% url 'altas:registrar_recien_nacido' %}">
+                                <i class="bi bi-heart"></i> Nuevo RN
+                            </a></li>
+                            {% endif %}
+                        </ul>
+                    </li>
+                    {% endif %}
+                    
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'altas:crear_alta' %}">
-                            <i class="bi bi-plus-circle"></i> Nueva Alta
+                            <i class="bi bi-clipboard-check"></i> Nueva Alta
                         </a>
                     </li>
                     <li class="nav-item">
@@ -47,14 +74,30 @@
                             <i class="bi bi-file-earmark-excel"></i> Exportar
                         </a>
                     </li>
+                    {% endif %}
                 </ul>
                 
                 <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
+                            <span class="badge bg-secondary">{{ user.get_rol_display }}</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'usuarios:perfil' %}"><i class="bi bi-person"></i> Mi Perfil</a></li>
+                            <li><a class="dropdown-item" href="/admin/" target="_blank"><i class="bi bi-gear"></i> Admin</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'usuarios:logout' %}"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
+                        </ul>
+                    </li>
+                    {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="/admin/" target="_blank">
-                            <i class="bi bi-gear"></i> Admin
+                        <a class="nav-link" href="{% url 'usuarios:login' %}">
+                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
                         </a>
                     </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -89,3 +132,10 @@
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+                <li><strong>Matrona:</strong> Registra partos y RN</li>
+                <li><strong>Enfermero:</strong> Confirma altas clínicas</li>
+                <li><strong>Administrativo:</strong> Registra madres y gestiona usuarios</li>
+                <li><strong>Jefatura:</strong> Acceso completo a todas las funciones</li>
+            </ul>
+        </div>
+    </div>

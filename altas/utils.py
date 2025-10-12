@@ -110,7 +110,7 @@ def generar_certificado_pdf(alta):
         ['Sexo:', alta.recien_nacido.get_sexo_display()],
         ['Peso:', f'{alta.recien_nacido.peso} kg'],
         ['Talla:', f'{alta.recien_nacido.talla} cm'],
-        ['APGAR (1/5 min):', f'{alta.recien_nacido.apgar_1_min} / {alta.recien_nacido.apgar_5_min}'],
+        ['Vitalidad (1/5 min):', f'{alta.recien_nacido.apgar_1_min} / {alta.recien_nacido.apgar_5_min}'],
         ['Condición:', alta.recien_nacido.get_condicion_nacimiento_display()],
     ]
     
@@ -210,7 +210,7 @@ def exportar_altas_excel(altas):
         'Tipo Parto',
         'Código RN',
         'Peso RN (kg)',
-        'APGAR',
+        'Vitalidad RN (1/5 min)',
         'Estado Alta',
         'Alta Clínica',
         'Alta Administrativa',

@@ -1,16 +1,94 @@
 # altas/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from .models import Alta
+from pacientes.models import Madre
+from partos.models import Parto
+from recien_nacidos.models import RecienNacido
 from .forms import (
     CrearAltaForm,
     ConfirmarAltaClinicaForm,
     ConfirmarAltaAdministrativaForm,
-    BuscarAltaForm
+    BuscarAltaForm,
+    MadreForm,
+    PartoForm,
+    RecienNacidoForm
 )
 from .utils import generar_certificado_pdf, exportar_altas_excel
+from usuarios.decorators import rol_requerido
 
+@login_required
+
+def registrar_madre(request):
+    """Vista para registrar una nueva madre (Matrona o Administrativo)"""
+    if request.method == 'POST':
+        form = MadreForm(request.POST)
+        if form.is_valid():
+            madre = form.save()
+            messages.success(
+                request,
+                f'Madre {madre.nombre} registrada exitosamente con RUT {madre.rut}'
+            )
+            return redirect('altas:lista_altas')
+    else:
+        form = MadreForm()
+    
+    context = {
+        'form': form,
+        'titulo': 'Registrar Nueva Madre',
+        'subtitulo': 'Ingreso de paciente al área de obstetricia'
+    }
+    return render(request, 'pacientes/registrar_madre.html', context)
+
+
+@login_required
+
+def registrar_parto(request):
+    """Vista para registrar un nuevo parto (Matrona o Médico)"""
+    if request.method == 'POST':
+        form = PartoForm(request.POST)
+        if form.is_valid():
+            parto = form.save()
+            messages.success(
+                request,
+                f'Parto registrado exitosamente para {parto.madre.nombre}'
+            )
+            return redirect('altas:lista_altas')
+    else:
+        form = PartoForm()
+    
+    context = {
+        'form': form,
+        'titulo': 'Registrar Nuevo Parto',
+        'subtitulo': 'Registro del proceso de parto'
+    }
+    return render(request, 'partos/registrar_parto.html', context)
+
+
+@login_required
+
+def registrar_recien_nacido(request):
+    """Vista para registrar un recién nacido (Personal clínico)"""
+    if request.method == 'POST':
+        form = RecienNacidoForm(request.POST)
+        if form.is_valid():
+            rn = form.save()
+            messages.success(
+                request,
+                f'Recién nacido registrado exitosamente. Código: {rn.codigo_unico}'
+            )
+            return redirect('altas:lista_altas')
+    else:
+        form = RecienNacidoForm()
+    
+    context = {
+        'form': form,
+        'titulo': 'Registrar Recién Nacido',
+        'subtitulo': 'Registro inicial del RN'
+    }
+    return render(request, 'recien_nacidos/registrar_recien_nacido.html', context)
 def lista_altas(request):
     """
     Vista principal: Lista de todas las altas con filtros de búsqueda.
@@ -50,7 +128,7 @@ def lista_altas(request):
     
     return render(request, 'altas/lista_altas.html', context)
 
-
+@login_required
 def crear_alta(request):
     """
     Vista para crear un nuevo proceso de alta.
@@ -78,7 +156,7 @@ def crear_alta(request):
     
     return render(request, 'altas/crear_alta.html', context)
 
-
+@login_required
 def detalle_alta(request, pk):
     """
     Vista de detalle de un alta específica.
@@ -105,6 +183,7 @@ def detalle_alta(request, pk):
     
     return render(request, 'altas/detalle_alta.html', context)
 
+@login_required
 
 def confirmar_alta_clinica(request, pk):
     """
@@ -153,6 +232,7 @@ def confirmar_alta_clinica(request, pk):
     
     return render(request, 'altas/confirmar_alta.html', context)
 
+@login_required
 
 def confirmar_alta_administrativa(request, pk):
     """
@@ -210,7 +290,7 @@ def confirmar_alta_administrativa(request, pk):
     
     return render(request, 'altas/confirmar_alta.html', context)
 
-
+@login_required
 def historial_altas(request):
     """
     Vista del historial completo de altas completadas.

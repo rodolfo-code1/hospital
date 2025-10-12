@@ -6,7 +6,7 @@ import uuid
 
 class RecienNacido(models.Model):
     """
-    Modelo de Recién Nacido - Módulo 3 simplificado
+    Modelo de Recién Nacido 
     Registra la información del recién nacido vinculado a un parto.
     """
     
@@ -54,33 +54,34 @@ class RecienNacido(models.Model):
     peso = models.DecimalField(
         max_digits=4,
         decimal_places=2,
-        validators=[MinValueValidator(0.5), MaxValueValidator(8.0)],
         verbose_name="Peso (kg)",
         help_text="Peso en kilogramos"
     )
     talla = models.DecimalField(
         max_digits=4,
         decimal_places=1,
-        validators=[MinValueValidator(30.0), MaxValueValidator(70.0)],
+
         verbose_name="Talla (cm)",
         help_text="Talla en centímetros"
     )
     
     # APGAR (Escala de valoración del recién nacido)
+
     apgar_1_min = models.IntegerField(
         validators=[MinValueValidator(0), MaxValueValidator(10)],
-        verbose_name="APGAR al minuto 1"
+        verbose_name="Puntuación de Vitalidad (minuto 1)"
     )
     apgar_5_min = models.IntegerField(
         validators=[MinValueValidator(0), MaxValueValidator(10)],
-        verbose_name="APGAR a los 5 minutos"
+        verbose_name="Puntuación de Vitalidad (minuto 5)"
     )
     apgar_10_min = models.IntegerField(
         null=True,
         blank=True,
         validators=[MinValueValidator(0), MaxValueValidator(10)],
-        verbose_name="APGAR a los 10 minutos"
+        verbose_name="Puntuación de Vitalidad (minuto 10)"
     )
+
     
     # Condición
     condicion_nacimiento = models.CharField(

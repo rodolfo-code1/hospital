@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="bi bi-activity"></i> {{ titulo }}</h4>
+                <p class="mb-0 mt-1"><small>{{ subtitulo }}</small></p>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <h5 class="mb-3"><i class="bi bi-info-circle"></i> Información del Parto</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.madre.label_tag }}
+                            {{ form.madre }}
+                            {% if form.madre.errors %}<div class="text-danger">{{ form.madre.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.tipo.label_tag }}
+                            {{ form.tipo }}
+                            {% if form.tipo.errors %}<div class="text-danger">{{ form.tipo.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.fecha_hora_inicio.label_tag }}
+                            {{ form.fecha_hora_inicio }}
+                            {% if form.fecha_hora_inicio.errors %}<div class="text-danger">{{ form.fecha_hora_inicio.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.fecha_hora_termino.label_tag }}
+                            {{ form.fecha_hora_termino }}
+                            {% if form.fecha_hora_termino.errors %}<div class="text-danger">{{ form.fecha_hora_termino.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3"><i class="bi bi-people"></i> Personal Clínico</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.medico_responsable.label_tag }}
+                            {{ form.medico_responsable }}
+                            {% if form.medico_responsable.errors %}<div class="text-danger">{{ form.medico_responsable.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.matrona_responsable.label_tag }}
+                            {{ form.matrona_responsable }}
+                            {% if form.matrona_responsable.errors %}<div class="text-danger">{{ form.matrona_responsable.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.personal_apoyo.label_tag }}
+                        {{ form.personal_apoyo }}
+                        <small class="form-text text-muted">Enfermeros y otros profesionales</small>
+                        {% if form.personal_apoyo.errors %}<div class="text-danger">{{ form.personal_apoyo.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3"><i class="bi bi-exclamation-triangle"></i> Complicaciones</h5>
+                    <div class="mb-3 form-check">
+                        {{ form.tuvo_complicaciones }}
+                        <label class="form-check-label" for="{{ form.tuvo_complicaciones.id_for_label }}">
+                            {{ form.tuvo_complicaciones.label }}
+                        </label>
+                        {% if form.tuvo_complicaciones.errors %}<div class="text-danger">{{ form.tuvo_complicaciones.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.complicaciones.label_tag }}
+                        {{ form.complicaciones }}
+                        <small class="form-text text-muted">Describir complicaciones si las hubo</small>
+                        {% if form.complicaciones.errors %}<div class="text-danger">{{ form.complicaciones.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.observaciones.label_tag }}
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}<div class="text-danger">{{ form.observaciones.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-info text-white">
+                            <i class="bi bi-save"></i> Registrar Parto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

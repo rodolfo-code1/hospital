@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Sesión - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h3><i class="bi bi-hospital"></i> Sistema de Trazabilidad</h3>
+                <p class="mb-0">Iniciar Sesión</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="bi bi-person"></i> RUT
+                        </label>
+                        <input type="text" 
+                               class="form-control form-control-lg" 
+                               id="username" 
+                               name="username" 
+                               required 
+                               autofocus
+                               placeholder="Ingrese su RUT (sin puntos ni guión)">
+                        <small class="form-text text-muted">Ejemplo: 123456789</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label">
+                            <i class="bi bi-lock"></i> Contraseña
+                        </label>
+                        <input type="password" 
+                               class="form-control form-control-lg" 
+                               id="password" 
+                               name="password" 
+                               required
+                               placeholder="Ingrese su contraseña">
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center text-muted">
+                <p class="mb-2">
+                    ¿No tienes cuenta? <a href="{% url 'usuarios:registro' %}" class="fw-bold text-success">Crear cuenta aquí</a>
+                </p>
+                <small>
+                    <i class="bi bi-shield-check"></i> Sistema seguro con roles diferenciados
+                </small>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-3">
+            <strong><i class="bi bi-info-circle"></i> Roles disponibles:</strong>
+            <ul class="mb-0 mt-2 small">
+                <li><strong>Médico:</strong> Confirma altas clínicas</li>
+                <li><strong>Matrona:</strong> Registra partos y RN</li>
+                <li><strong>Administrativo:</strong> Confirma altas administrativas</li>
+                <li><strong>Enfermero:</strong> Acceso a registros</li>
+                <li><strong>Jefatura:</strong> Acceso completo</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

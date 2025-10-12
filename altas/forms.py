@@ -5,6 +5,87 @@ from pacientes.models import Madre
 from partos.models import Parto
 from recien_nacidos.models import RecienNacido
 
+class MadreForm(forms.ModelForm):
+    """Formulario para registrar una nueva madre"""
+    
+    class Meta:
+        model = Madre
+        fields = [
+            'rut', 'nombre', 'edad', 'direccion', 'telefono', 'email',
+            'controles_prenatales', 'embarazos_anteriores', 'patologias'
+        ]
+        widgets = {
+            'rut': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '12345678-9'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo'}),
+            'edad': forms.NumberInput(attrs={'class': 'form-control', 'min': 12, 'max': 60}),
+            'direccion': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+56912345678'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'controles_prenatales': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'embarazos_anteriores': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
+            'patologias': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
+class PartoForm(forms.ModelForm):
+    """Formulario para registrar un nuevo parto"""
+    
+    class Meta:
+        model = Parto
+        fields = [
+            'madre', 'tipo', 'fecha_hora_inicio', 'fecha_hora_termino',
+            'tuvo_complicaciones', 'complicaciones', 'medico_responsable',
+            'matrona_responsable', 'personal_apoyo', 'observaciones'
+        ]
+        widgets = {
+            'madre': forms.Select(attrs={'class': 'form-select'}),
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'fecha_hora_inicio': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'fecha_hora_termino': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'tuvo_complicaciones': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'complicaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'medico_responsable': forms.TextInput(attrs={'class': 'form-control'}),
+            'matrona_responsable': forms.TextInput(attrs={'class': 'form-control'}),
+            'personal_apoyo': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
+class RecienNacidoForm(forms.ModelForm):
+    """Formulario para registrar un recién nacido"""
+    
+    class Meta:
+        model = RecienNacido
+        fields = [
+            'parto', 'nombre', 'sexo', 'peso', 'talla', 'apgar_1_min',
+            'apgar_5_min', 'apgar_10_min', 'condicion_nacimiento',
+            'requiere_derivacion', 'servicio_derivacion',
+            'vacunas_aplicadas', 'examenes_realizados', 'observaciones'
+        ]
+        widgets = {
+            'parto': forms.Select(attrs={'class': 'form-select'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Opcional'}),
+            'sexo': forms.Select(attrs={'class': 'form-select'}),
+            'peso': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'talla': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1'}),
+            'apgar_1_min': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '10'}),
+            'apgar_5_min': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '10'}),
+            'apgar_10_min': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '10'}),
+            'condicion_nacimiento': forms.Select(attrs={'class': 'form-select'}),
+            'requiere_derivacion': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'servicio_derivacion': forms.TextInput(attrs={'class': 'form-control'}),
+            'vacunas_aplicadas': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'examenes_realizados': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
 class CrearAltaForm(forms.ModelForm):
     """
     Formulario para iniciar el proceso de alta.

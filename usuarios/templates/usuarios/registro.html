@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Registro de Usuario - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white text-center">
+                <h3><i class="bi bi-person-plus-fill"></i> Crear Nueva Cuenta</h3>
+                <p class="mb-0">Sistema de Trazabilidad - Hospital</p>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        {{ form.nombre.label_tag }}
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                            <div class="text-danger">{{ form.nombre.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.rut.label_tag }}
+                        {{ form.rut }}
+                        <small class="form-text text-muted">Este será tu identificador único</small>
+                        {% if form.rut.errors %}
+                            <div class="text-danger">{{ form.rut.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.rol.label_tag }}
+                        {{ form.rol }}
+                        <small class="form-text text-muted">Selecciona tu cargo en el hospital</small>
+                        {% if form.rol.errors %}
+                            <div class="text-danger">{{ form.rol.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.password1.label_tag }}
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                            <div class="text-danger">{{ form.password1.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.password2.label_tag }}
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                            <div class="text-danger">{{ form.password2.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle"></i> Crear Cuenta
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">
+                    ¿Ya tienes cuenta? <a href="{% url 'usuarios:login' %}" class="fw-bold">Iniciar Sesión</a>
+                </p>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-3">
+            <strong><i class="bi bi-info-circle"></i> Roles disponibles:</strong>
+            <ul class="mb-0 mt-2 small">
+                <li><strong>Médico:</strong> Registra partos/RN y confirma altas clínicas</li>
+                <li><strong>Matrona:</strong> Registra madres, partos y recién nacidos</li>
+                <li><strong>Administrativo:</strong> Registra madres y confirma altas administrativas</li>
+                <li><strong>Enfermero:</strong> Registra recién nacidos</li>
+                <li><strong>Jefatura:</strong> Acceso completo al sistema</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

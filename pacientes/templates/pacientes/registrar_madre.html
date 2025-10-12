@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-person-plus"></i> {{ titulo }}</h4>
+                <p class="mb-0 mt-1"><small>{{ subtitulo }}</small></p>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <h5 class="mb-3"><i class="bi bi-person"></i> Datos Personales</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.rut.label_tag }}
+                            {{ form.rut }}
+                            {% if form.rut.errors %}<div class="text-danger">{{ form.rut.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            {{ form.nombre.label_tag }}
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger">{{ form.nombre.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-2 mb-3">
+                            {{ form.edad.label_tag }}
+                            {{ form.edad }}
+                            {% if form.edad.errors %}<div class="text-danger">{{ form.edad.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            {{ form.telefono.label_tag }}
+                            {{ form.telefono }}
+                            {% if form.telefono.errors %}<div class="text-danger">{{ form.telefono.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-5 mb-3">
+                            {{ form.email.label_tag }}
+                            {{ form.email }}
+                            {% if form.email.errors %}<div class="text-danger">{{ form.email.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.direccion.label_tag }}
+                        {{ form.direccion }}
+                        {% if form.direccion.errors %}<div class="text-danger">{{ form.direccion.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3"><i class="bi bi-clipboard-pulse"></i> Antecedentes Clínicos</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.controles_prenatales.label_tag }}
+                            {{ form.controles_prenatales }}
+                            {% if form.controles_prenatales.errors %}<div class="text-danger">{{ form.controles_prenatales.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            {{ form.embarazos_anteriores.label_tag }}
+                            {{ form.embarazos_anteriores }}
+                            {% if form.embarazos_anteriores.errors %}<div class="text-danger">{{ form.embarazos_anteriores.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.patologias.label_tag }}
+                        {{ form.patologias }}
+                        <small class="form-text text-muted">Ej: hipertensión, diabetes gestacional</small>
+                        {% if form.patologias.errors %}<div class="text-danger">{{ form.patologias.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Registrar Madre
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

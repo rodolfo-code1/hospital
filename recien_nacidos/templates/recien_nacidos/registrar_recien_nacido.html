@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - Sistema Trazabilidad{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0"><i class="bi bi-heart"></i> {{ titulo }}</h4>
+                <p class="mb-0 mt-1"><small>{{ subtitulo }}</small></p>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <h5 class="mb-3"><i class="bi bi-link-45deg"></i> Vinculación</h5>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            {{ form.parto.label_tag }}
+                            {{ form.parto }}
+                            {% if form.parto.errors %}<div class="text-danger">{{ form.parto.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.nombre.label_tag }}
+                            {{ form.nombre }}
+                            {% if form.nombre.errors %}<div class="text-danger">{{ form.nombre.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3"><i class="bi bi-clipboard2-pulse"></i> Datos Clínicos</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.sexo.label_tag }}
+                            {{ form.sexo }}
+                            {% if form.sexo.errors %}<div class="text-danger">{{ form.sexo.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.peso.label_tag }}
+                            {{ form.peso }}
+                            {% if form.peso.errors %}<div class="text-danger">{{ form.peso.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.talla.label_tag }}
+                            {{ form.talla }}
+                            {% if form.talla.errors %}<div class="text-danger">{{ form.talla.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.condicion_nacimiento.label_tag }}
+                        {{ form.condicion_nacimiento }}
+                        {% if form.condicion_nacimiento.errors %}<div class="text-danger">{{ form.condicion_nacimiento.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3"><i class="bi bi-heart-pulse"></i> Puntuación de Vitalidad (Test APGAR)</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.apgar_1_min.label_tag }}
+                            {{ form.apgar_1_min }}
+                            {% if form.apgar_1_min.errors %}<div class="text-danger">{{ form.apgar_1_min.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.apgar_5_min.label_tag }}
+                            {{ form.apgar_5_min }}
+                            {% if form.apgar_5_min.errors %}<div class="text-danger">{{ form.apgar_5_min.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.apgar_10_min.label_tag }}
+                            {{ form.apgar_10_min }}
+                            <small class="form-text text-muted">Opcional</small>
+                            {% if form.apgar_10_min.errors %}<div class="text-danger">{{ form.apgar_10_min.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3"><i class="bi bi-arrow-right-circle"></i> Derivación</h5>
+                    <div class="mb-3 form-check">
+                        {{ form.requiere_derivacion }}
+                        <label class="form-check-label" for="{{ form.requiere_derivacion.id_for_label }}">
+                            {{ form.requiere_derivacion.label }}
+                        </label>
+                        {% if form.requiere_derivacion.errors %}<div class="text-danger">{{ form.requiere_derivacion.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.servicio_derivacion.label_tag }}
+                        {{ form.servicio_derivacion }}
+                        <small class="form-text text-muted">Ej: UCI Neonatal, Neonatología</small>
+                        {% if form.servicio_derivacion.errors %}<div class="text-danger">{{ form.servicio_derivacion.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <h5 class="mb-3"><i class="bi bi-clipboard-check"></i> Procedimientos</h5>
+                    <div class="mb-3">
+                        {{ form.vacunas_aplicadas.label_tag }}
+                        {{ form.vacunas_aplicadas }}
+                        {% if form.vacunas_aplicadas.errors %}<div class="text-danger">{{ form.vacunas_aplicadas.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.examenes_realizados.label_tag }}
+                        {{ form.examenes_realizados }}
+                        {% if form.examenes_realizados.errors %}<div class="text-danger">{{ form.examenes_realizados.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.observaciones.label_tag }}
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}<div class="text-danger">{{ form.observaciones.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="bi bi-save"></i> Registrar Recién Nacido
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -9,6 +9,11 @@ urlpatterns = [
     # Página principal - Lista de altas
     path('', views.lista_altas, name='lista_altas'),
     
+    # Registros (Madre, Parto, RN) - NUEVO
+    path('registrar/madre/', views.registrar_madre, name='registrar_madre'),
+    path('registrar/parto/', views.registrar_parto, name='registrar_parto'),
+    path('registrar/recien-nacido/', views.registrar_recien_nacido, name='registrar_recien_nacido'),
+    
     # CRUD de altas
     path('crear/', views.crear_alta, name='crear_alta'),
     path('detalle/<int:pk>/', views.detalle_alta, name='detalle_alta'),
