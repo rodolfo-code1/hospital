@@ -184,7 +184,7 @@ def detalle_alta(request, pk):
     return render(request, 'altas/detalle_alta.html', context)
 
 @login_required
-
+@rol_requerido('medico','jefatura')
 def confirmar_alta_clinica(request, pk):
     """
     Vista para confirmar el alta clínica (Médico).
@@ -233,7 +233,7 @@ def confirmar_alta_clinica(request, pk):
     return render(request, 'altas/confirmar_alta.html', context)
 
 @login_required
-
+@rol_requerido('administrativo', 'jefatura')
 def confirmar_alta_administrativa(request, pk):
     """
     Vista para confirmar el alta administrativa (Administrativo).
