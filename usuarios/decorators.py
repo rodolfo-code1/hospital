@@ -39,3 +39,11 @@ def administrativo_requerido(view_func):
 def personal_clinico_requerido(view_func):
     """Decorador para personal clínico (médico, matrona, enfermero)"""
     return rol_requerido('medico', 'matrona', 'enfermero')(view_func)
+
+def supervisor_requerido(view_func):
+    """Decorador específico para supervisores"""
+    return rol_requerido('supervisor')(view_func)
+
+def encargado_ti_requerido(view_func):
+    """Decorador específico para encargados de TI"""
+    return rol_requerido('encargado_ti')(view_func)

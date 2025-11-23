@@ -55,6 +55,15 @@
                         {% elif user.rol == 'jefatura' %}
                             <li>Acceso total al sistema</li>
                             <li>Todos los permisos disponibles</li>
+                        {% elif user.rol == 'supervisor' %}
+                            <li>Auditoría de registros médicos</li>
+                            <li>Supervisión de tiempos de respuesta</li>
+                            <li>Generación de reportes de gestión</li>
+                        {% elif user.rol == 'encargado_ti' %}
+                            <li>Gestión de usuarios y claves</li>
+                            <li>Respaldo de base de datos</li>
+                            <li>Configuración del sistema</li>
+                            <li>Acceso a logs de errores</li>
                         {% endif %}
                     </ul>
                 </div>

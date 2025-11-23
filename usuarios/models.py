@@ -3,19 +3,15 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class Usuario(AbstractUser):
-    """
-    Modelo de Usuario con roles para el sistema de trazabilidad.
-    Extiende el usuario de Django para agregar roles específicos.
-    """
-    
     ROLES = [
         ('medico', 'Médico'),
         ('matrona', 'Matrona'),
         ('enfermero', 'Enfermero'),
         ('administrativo', 'Administrativo'),
         ('jefatura', 'Jefatura'),
+        ('supervisor', 'Supervisor'),
+        ('encargado_ti', 'Encargado TI'),
     ]
-    
     rol = models.CharField(
         max_length=20,
         choices=ROLES,
@@ -46,3 +42,9 @@ class Usuario(AbstractUser):
     
     def es_administrativo(self):
         return self.rol == 'administrativo'
+    
+    def es_supervisor(self):
+        return self.rol == 'supervisor'
+
+    def es_encargado_ti(self):
+        return self.rol == 'encargado_ti'

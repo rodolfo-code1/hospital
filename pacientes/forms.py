@@ -1,7 +1,7 @@
 # pacientes/forms.py
 from django import forms
 from .models import Madre
-
+from usuarios.validador import validar_rut
 class MadreForm(forms.ModelForm):
     """Formulario para registrar una nueva madre"""
     
@@ -22,3 +22,23 @@ class MadreForm(forms.ModelForm):
             'embarazos_anteriores': forms.NumberInput(attrs={'class': 'form-control', 'min': 0}),
             'patologias': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+
+def clean_rut(self):
+        rut = self.cleaned_data.get('rut')
+        
+        # 1. Validar RUT
+        if not validar_rut(rut):
+            raise forms.ValidationError("RUT inválido. Verifique el dígito verificador.")
+            
+        # 2. Formatear
+        rut_limpio = rut.replace('.', '').replace('-', '').upper()
+        rut_formateado = f"{rut_limpio[:-1]}-{rut_limpio[-1]}"
+        
+        # 3. Verificar duplicados (excluyendo la instancia actual si es edición)
+        # self.instance.pk verifica si estamos editando una madre existente
+        existe = Madre.objects.filter(rut=rut_formateado).exclude(pk=self.instance.pk).exists()
+        
+        if existe:
+            raise forms.ValidationError("Ya existe una madre registrada con este RUT.")
+            
+        return rut_formateado

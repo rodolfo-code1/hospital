@@ -2,6 +2,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import Usuario
+from .validador import validar_rut
 
 class RegistroUsuarioForm(UserCreationForm):
     """Formulario simplificado de registro - Solo campos esenciales"""
@@ -45,10 +46,21 @@ class RegistroUsuarioForm(UserCreationForm):
     
     def clean_rut(self):
         rut = self.cleaned_data.get('rut')
-        if Usuario.objects.filter(rut=rut).exists():
-            raise forms.ValidationError("Este RUT ya está registrado")
-        return rut
-    
+        
+        # 1. Validar formato y dígito verificador
+        if not validar_rut(rut):
+            raise forms.ValidationError("El RUT ingresado no es válido.")
+            
+        # 2. Formatear para guardar limpio (sin puntos, con guión)
+        # Es buena práctica guardar siempre en el mismo formato
+        rut_limpio = rut.replace('.', '').replace('-', '').upper()
+        rut_formateado = f"{rut_limpio[:-1]}-{rut_limpio[-1]}"
+        
+        # 3. Validar unicidad (que no exista ya)
+        if Usuario.objects.filter(rut=rut_formateado).exists():
+            raise forms.ValidationError("Este RUT ya está registrado en el sistema.")
+            
+        return rut_formateado
     def save(self, commit=True):
         user = super().save(commit=False)
         # Generar username automáticamente desde el RUT

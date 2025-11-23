@@ -3,6 +3,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
+from django.utils import timezone  # Importante para el dashboard
 from .models import Alta
 from pacientes.models import Madre
 from partos.models import Parto
@@ -19,10 +20,54 @@ from .forms import (
 from .utils import generar_certificado_pdf, exportar_altas_excel
 from usuarios.decorators import rol_requerido
 
-@login_required
+# ==========================================
+# DASHBOARD PRINCIPAL
+# ==========================================
 
+@login_required
+def home(request):
+    """
+    Dashboard principal que renderiza opciones según el rol del usuario.
+    Muestra contadores y accesos directos personalizados.
+    """
+    user = request.user
+    context = {}
+
+    # Lógica para MÉDICOS y JEFATURA
+    if user.rol == 'medico' or user.rol == 'jefatura':
+        # Altas que tienen registros completos pero faltan confirmar clínicamente
+        context['pendientes_clinica'] = Alta.objects.filter(
+            registros_completos=True, 
+            alta_clinica_confirmada=False
+        ).count()
+
+    # Lógica para ADMINISTRATIVOS y JEFATURA
+    if user.rol == 'administrativo' or user.rol == 'jefatura':
+        # Altas que ya tienen OK médico pero falta cierre administrativo
+        context['pendientes_administrativa'] = Alta.objects.filter(
+            alta_clinica_confirmada=True, 
+            alta_administrativa_confirmada=False
+        ).count()
+    
+    # Lógica para MATRONAS y JEFATURA (Mis registros del turno)
+    if user.rol == 'matrona' or user.rol == 'jefatura':
+        hoy = timezone.now().date()
+        # Filtra los partos registrados hoy. 
+        # Nota: Si tuvieras un campo 'created_by', filtraríamos por usuario también.
+        context['registros_hoy'] = Parto.objects.filter(
+            fecha_registro__date=hoy
+        ).count()
+
+    return render(request, 'home.html', context)
+
+
+# ==========================================
+# VISTAS DE REGISTRO (MATRONA/ADMIN)
+# ==========================================
+
+@login_required
 def registrar_madre(request):
-    """Vista para registrar una nueva madre (Matrona o Administrativo)"""
+    """Vista para registrar una nueva madre"""
     if request.method == 'POST':
         form = MadreForm(request.POST)
         if form.is_valid():
@@ -31,7 +76,7 @@ def registrar_madre(request):
                 request,
                 f'Madre {madre.nombre} registrada exitosamente con RUT {madre.rut}'
             )
-            return redirect('altas:lista_altas')
+            return redirect('altas:home') # Redirige al dashboard
     else:
         form = MadreForm()
     
@@ -44,9 +89,8 @@ def registrar_madre(request):
 
 
 @login_required
-
 def registrar_parto(request):
-    """Vista para registrar un nuevo parto (Matrona o Médico)"""
+    """Vista para registrar un nuevo parto"""
     if request.method == 'POST':
         form = PartoForm(request.POST)
         if form.is_valid():
@@ -55,7 +99,7 @@ def registrar_parto(request):
                 request,
                 f'Parto registrado exitosamente para {parto.madre.nombre}'
             )
-            return redirect('altas:lista_altas')
+            return redirect('altas:home')
     else:
         form = PartoForm()
     
@@ -68,9 +112,8 @@ def registrar_parto(request):
 
 
 @login_required
-
 def registrar_recien_nacido(request):
-    """Vista para registrar un recién nacido (Personal clínico)"""
+    """Vista para registrar un recién nacido"""
     if request.method == 'POST':
         form = RecienNacidoForm(request.POST)
         if form.is_valid():
@@ -79,7 +122,7 @@ def registrar_recien_nacido(request):
                 request,
                 f'Recién nacido registrado exitosamente. Código: {rn.codigo_unico}'
             )
-            return redirect('altas:lista_altas')
+            return redirect('altas:home')
     else:
         form = RecienNacidoForm()
     
@@ -89,9 +132,16 @@ def registrar_recien_nacido(request):
         'subtitulo': 'Registro inicial del RN'
     }
     return render(request, 'recien_nacidos/registrar_recien_nacido.html', context)
+
+
+# ==========================================
+# GESTIÓN DE ALTAS
+# ==========================================
+
+@login_required
 def lista_altas(request):
     """
-    Vista principal: Lista de todas las altas con filtros de búsqueda.
+    Lista de todas las altas con filtros de búsqueda.
     """
     altas = Alta.objects.all().select_related('madre', 'parto', 'recien_nacido')
     form_buscar = BuscarAltaForm(request.GET or None)
@@ -128,6 +178,7 @@ def lista_altas(request):
     
     return render(request, 'altas/lista_altas.html', context)
 
+
 @login_required
 def crear_alta(request):
     """
@@ -156,6 +207,7 @@ def crear_alta(request):
     
     return render(request, 'altas/crear_alta.html', context)
 
+
 @login_required
 def detalle_alta(request, pk):
     """
@@ -182,6 +234,7 @@ def detalle_alta(request, pk):
     }
     
     return render(request, 'altas/detalle_alta.html', context)
+
 
 @login_required
 @rol_requerido('medico','jefatura')
@@ -231,6 +284,7 @@ def confirmar_alta_clinica(request, pk):
     }
     
     return render(request, 'altas/confirmar_alta.html', context)
+
 
 @login_required
 @rol_requerido('administrativo', 'jefatura')
@@ -290,6 +344,7 @@ def confirmar_alta_administrativa(request, pk):
     
     return render(request, 'altas/confirmar_alta.html', context)
 
+
 @login_required
 def historial_altas(request):
     """
@@ -307,6 +362,7 @@ def historial_altas(request):
     return render(request, 'altas/historial_altas.html', context)
 
 
+@login_required
 def exportar_excel(request):
     """
     Vista para exportar altas a Excel.
@@ -329,6 +385,7 @@ def exportar_excel(request):
         return redirect('altas:lista_altas')
 
 
+@login_required
 def descargar_certificado(request, pk):
     """
     Vista para descargar/visualizar el certificado PDF de un alta.
