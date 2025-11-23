@@ -160,5 +160,5 @@ MESSAGE_TAGS = {
 
 # Configuración de autenticación
 LOGIN_URL = 'usuarios:login'
-LOGIN_REDIRECT_URL = 'altas:lista_altas'
+LOGIN_REDIRECT_URL = 'app:home'
 LOGOUT_REDIRECT_URL = 'usuarios:login'

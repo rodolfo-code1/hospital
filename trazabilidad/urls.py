@@ -23,15 +23,15 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     
-    # URLs de las apps
     path('usuarios/', include('usuarios.urls')),
     path('pacientes/', include('pacientes.urls')),
     path('partos/', include('partos.urls')),
     path('recien-nacidos/', include('recien_nacidos.urls')),
     path('reportes/', include('reportes.urls')),
-    
-    # Módulo 4 - Altas (raíz del proyecto)
-    path('', include('altas.urls')),  # ⭐ Todas las rutas de altas desde la raíz
+    path('altas/', include('altas.urls')),
+
+ # LA RAÍZ AHORA APUNTA A 'app'
+    path('', include('app.urls')), 
 ]
 
 # Servir archivos media en desarrollo

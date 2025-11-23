@@ -78,3 +78,52 @@ class RegistroUsuarioForm(UserCreationForm):
         if commit:
             user.save()
         return user
+# ... (código existente) ...
+
+class EditarUsuarioForm(forms.ModelForm):
+    """Formulario para que el TI modifique datos de usuarios existentes"""
+    
+    nombre = forms.CharField(
+        max_length=200,
+        required=True,
+        label="Nombre Completo",
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+    
+    class Meta:
+        model = Usuario
+        fields = ['rut', 'nombre', 'email', 'telefono', 'rol', 'is_active']
+        widgets = {
+            'rut': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
+            'rol': forms.Select(attrs={'class': 'form-select'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'is_active': '¿Usuario Activo?'
+        }
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.get('instance')
+        if instance:
+            # Pre-llenar el campo nombre combinando first_name y last_name
+            initial = kwargs.get('initial', {})
+            initial['nombre'] = instance.get_full_name()
+            kwargs['initial'] = initial
+        super().__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        # Guardar nombre dividido
+        nombre_completo = self.cleaned_data['nombre'].strip().split()
+        if len(nombre_completo) >= 2:
+            user.first_name = nombre_completo[0]
+            user.last_name = ' '.join(nombre_completo[1:])
+        else:
+            user.first_name = nombre_completo[0] if nombre_completo else ''
+            user.last_name = ''
+        
+        if commit:
+            user.save()
+        return user

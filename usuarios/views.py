@@ -1,15 +1,17 @@
 # usuarios/views.py
+from django.shortcuts import render, redirect, get_object_or_404
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.urls import reverse
-from .forms import RegistroUsuarioForm
+from .forms import RegistroUsuarioForm,EditarUsuarioForm
+from .models import Usuario
+from .decorators import encargado_ti_requerido
 
 def registro_view(request):
     """Vista de auto-registro de usuarios"""
     if request.user.is_authenticated:
-        return redirect('altas:lista_altas')
+        return redirect('app:home')  
     
     if request.method == 'POST':
         form = RegistroUsuarioForm(request.POST)
@@ -19,9 +21,8 @@ def registro_view(request):
                 request,
                 f'Cuenta creada exitosamente. Bienvenido {user.get_full_name()} como {user.get_rol_display()}'
             )
-            # Iniciar sesión automáticamente después del registro
             login(request, user)
-            return redirect('altas:lista_altas')
+            return redirect('app:home')  # <--- CAMBIO AQUÍ
     else:
         form = RegistroUsuarioForm()
     
@@ -30,7 +31,7 @@ def registro_view(request):
 def login_view(request):
     """Vista de inicio de sesión"""
     if request.user.is_authenticated:
-        return redirect('altas:lista_altas')
+        return redirect('app:home')  # <--- CAMBIO AQUÍ
     
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -42,8 +43,9 @@ def login_view(request):
             login(request, user)
             messages.success(request, f'Bienvenido {user.get_full_name()} ({user.get_rol_display()})')
             
-            # Redirigir según el parámetro 'next' o a la página principal
-            next_url = request.GET.get('next', 'altas:lista_altas')
+            # CAMBIO IMPORTANTE AQUÍ ABAJO:
+            # Redirigir al 'next' si existe, si no al dashboard 'altas:home'
+            next_url = request.GET.get('next', 'app:home') 
             return redirect(next_url)
         else:
             messages.error(request, 'Usuario o contraseña incorrectos')
@@ -64,3 +66,54 @@ def perfil_view(request):
         'usuario': request.user
     }
     return render(request, 'usuarios/perfil.html', context)
+
+# ==========================================
+# GESTIÓN DE USUARIOS (ENCARGADO TI)
+# ==========================================
+
+@login_required
+@encargado_ti_requerido
+def gestion_usuarios(request):
+    """Lista todos los usuarios del sistema"""
+    usuarios = Usuario.objects.all().order_by('-date_joined')
+    return render(request, 'usuarios/lista_usuarios.html', {'usuarios': usuarios})
+
+@login_required
+@encargado_ti_requerido
+def crear_usuario_interno(request):
+    """Permite al TI crear un usuario manualmente"""
+    if request.method == 'POST':
+        form = RegistroUsuarioForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, f'Usuario {user.get_full_name()} creado correctamente.')
+            return redirect('usuarios:gestion_usuarios')
+    else:
+        form = RegistroUsuarioForm()
+    
+    return render(request, 'usuarios/form_usuario.html', {
+        'form': form,
+        'titulo': 'Crear Nuevo Usuario',
+        'btn_texto': 'Crear Usuario'
+    })
+
+@login_required
+@encargado_ti_requerido
+def editar_usuario(request, pk):
+    """Permite editar un usuario existente"""
+    usuario = get_object_or_404(Usuario, pk=pk)
+    
+    if request.method == 'POST':
+        form = EditarUsuarioForm(request.POST, instance=usuario)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Usuario {usuario.rut} actualizado correctamente.')
+            return redirect('usuarios:gestion_usuarios')
+    else:
+        form = EditarUsuarioForm(instance=usuario)
+    
+    return render(request, 'usuarios/form_usuario.html', {
+        'form': form,
+        'titulo': f'Editar Usuario: {usuario.rut}',
+        'btn_texto': 'Guardar Cambios'
+    })

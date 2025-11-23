@@ -7,7 +7,6 @@ from functools import wraps
 def rol_requerido(*roles_permitidos):
     """
     Decorador que verifica si el usuario tiene uno de los roles permitidos.
-    Uso: @rol_requerido('medico', 'matrona')
     """
     def decorator(view_func):
         @wraps(view_func)
@@ -25,25 +24,20 @@ def rol_requerido(*roles_permitidos):
     return decorator
 
 def medico_requerido(view_func):
-    """Decorador específico para médicos"""
     return rol_requerido('medico')(view_func)
 
 def matrona_requerida(view_func):
-    """Decorador específico para matronas"""
     return rol_requerido('matrona')(view_func)
 
 def administrativo_requerido(view_func):
-    """Decorador específico para administrativos"""
     return rol_requerido('administrativo')(view_func)
 
 def personal_clinico_requerido(view_func):
-    """Decorador para personal clínico (médico, matrona, enfermero)"""
-    return rol_requerido('medico', 'matrona', 'enfermero')(view_func)
+    """Decorador para personal clínico (ahora solo médico y matrona)"""
+    return rol_requerido('medico', 'matrona')(view_func)
 
 def supervisor_requerido(view_func):
-    """Decorador específico para supervisores"""
     return rol_requerido('supervisor')(view_func)
 
 def encargado_ti_requerido(view_func):
-    """Decorador específico para encargados de TI"""
     return rol_requerido('encargado_ti')(view_func)

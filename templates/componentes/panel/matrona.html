@@ -1,0 +1,52 @@
+<div class="col-12"><h5 class="text-secondary border-bottom pb-2"><i class="bi bi-heart-pulse"></i> Gestión Clínica (Matrona)</h5></div>
+
+<div class="col-md-4 col-lg-3">
+    <div class="card h-100 shadow-sm border-0 border-top border-success border-4 hover-shadow">
+        <div class="card-body text-center">
+            <div class="display-4 text-success mb-2"><i class="bi bi-person-standing-dress"></i></div>
+            <h6 class="card-title fw-bold">Registrar Madre</h6>
+            <p class="card-text small text-muted">Ingreso inicial y datos demográficos.</p>
+            <a href="{% url 'altas:registrar_madre' %}" class="btn btn-success btn-sm w-100 stretched-link">Iniciar</a>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-4 col-lg-3">
+    <div class="card h-100 shadow-sm border-0 border-top border-success border-4 hover-shadow">
+        <div class="card-body text-center">
+            <div class="display-4 text-success mb-2"><i class="bi bi-activity"></i></div>
+            <h6 class="card-title fw-bold">Registrar Parto</h6>
+            <p class="card-text small text-muted">Detalles del evento obstétrico.</p>
+            <a href="{% url 'altas:registrar_parto' %}" class="btn btn-success btn-sm w-100 stretched-link">Registrar</a>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-4 col-lg-3">
+    <div class="card h-100 shadow-sm border-0 border-top border-success border-4 hover-shadow">
+        <div class="card-body text-center">
+            <div class="display-4 text-success mb-2"><i class="bi bi-emoji-smile"></i></div>
+            <h6 class="card-title fw-bold">Recién Nacido</h6>
+            <p class="card-text small text-muted">Datos APGAR y antropometría.</p>
+            <a href="{% url 'altas:registrar_recien_nacido' %}" class="btn btn-success btn-sm w-100 stretched-link">Registrar</a>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-4 col-lg-3">
+    <div class="card h-100 shadow-sm border-0 border-top border-dark border-4 hover-shadow bg-light">
+        <div class="card-body text-center">
+            <div class="display-4 text-dark mb-2"><i class="bi bi-qr-code"></i></div>
+            <h6 class="card-title fw-bold">Generar QR</h6>
+            <p class="card-text small text-muted">Impresión de brazaletes madre-hijo.</p>
+            <button class="btn btn-outline-dark btn-sm w-100" disabled>Próximamente</button>
+        </div>
+    </div>
+</div>
+
+<div class="col-12">
+    <div class="alert alert-success d-flex justify-content-between align-items-center mb-0">
+        <span><i class="bi bi-check-circle"></i> <strong>Mis Registros:</strong> Has realizado {{ registros_hoy|default:"0" }} ingresos en este turno.</span>
+        <a href="{% url 'altas:lista_altas' %}" class="btn btn-sm btn-light text-success fw-bold">Ver Detalle</a>
+    </div>
+</div>

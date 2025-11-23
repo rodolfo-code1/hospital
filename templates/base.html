@@ -14,10 +14,10 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
         <div class="container-fluid">
-            <a class="navbar-brand fw-bold" href="{% url 'altas:home' %}">
+            <a class="navbar-brand fw-bold" href="{% url 'app:home' %}">
                 <i class="bi bi-hospital-fill"></i> Sistema Trazabilidad
             </a>
-            
+       
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -26,12 +26,12 @@
                 <ul class="navbar-nav me-auto">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link active" href="{% url 'altas:home' %}">
+                            <a class="nav-link active" href="{% url 'app:home' %}">
                                 <i class="bi bi-grid-fill"></i> Panel Principal
-                            </a>
+                            </a> 
                         </li>
 
-                        {% if user.rol == 'encargado_ti' or user.rol == 'jefatura' or user.is_staff %}
+                        {% if user.rol == 'encargado_ti' or user.is_staff %}
                         <li class="nav-item">
                             <a class="nav-link text-warning" href="/admin/" target="_blank">
                                 <i class="bi bi-gear-fill"></i> Admin Sistema

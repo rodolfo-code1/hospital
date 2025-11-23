@@ -6,9 +6,7 @@ class Usuario(AbstractUser):
     ROLES = [
         ('medico', 'Médico'),
         ('matrona', 'Matrona'),
-        ('enfermero', 'Enfermero'),
         ('administrativo', 'Administrativo'),
-        ('jefatura', 'Jefatura'),
         ('supervisor', 'Supervisor'),
         ('encargado_ti', 'Encargado TI'),
     ]

@@ -5,8 +5,6 @@ from . import views
 app_name = 'altas'
 
 urlpatterns = [
-    # NUEVO: Página principal ahora es el Dashboard
-    path('', views.home, name='home'),
     
     # La lista de gestión se mueve a su propia ruta
     path('lista/', views.lista_altas, name='lista_altas'),

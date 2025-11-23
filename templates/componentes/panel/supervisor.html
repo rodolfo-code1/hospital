@@ -1,0 +1,31 @@
+<div class="col-12 mt-2"><h5 class="text-secondary border-bottom pb-2"><i class="bi bi-bar-chart-line"></i> Supervisión y Auditoría</h5></div>
+
+<div class="col-md-4">
+    <div class="card h-100 shadow-sm border-0 bg-dark text-white">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-table"></i> Reporte REM BS22</h5>
+            <p class="card-text small text-white-50">Exportación estadística mensual para MINSAL.</p>
+            <a href="{% url 'altas:exportar_excel' %}" class="btn btn-light btn-sm w-100 stretched-link text-dark fw-bold">Generar Excel</a>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-4">
+    <div class="card h-100 shadow-sm border-0 bg-light">
+        <div class="card-body">
+            <h5 class="card-title text-secondary"><i class="bi bi-eye"></i> Auditoría</h5>
+            <p class="card-text small text-muted">Bitácora de acciones y cambios.</p>
+            <button class="btn btn-outline-secondary btn-sm w-100" disabled>Ver Logs (Pronto)</button>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-4">
+    <div class="card h-100 shadow-sm border-0 bg-light">
+        <div class="card-body">
+            <h5 class="card-title text-secondary"><i class="bi bi-pie-chart"></i> Métricas</h5>
+            <p class="card-text small text-muted">Resumen de ocupación y partos.</p>
+            <button class="btn btn-outline-secondary btn-sm w-100" disabled>Ver Gráficos (Pronto)</button>
+        </div>
+    </div>
+</div>
