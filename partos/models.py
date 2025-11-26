@@ -1,6 +1,7 @@
 # partos/models.py
 from django.db import models
 from pacientes.models import Madre
+from django.conf import settings
 
 class Parto(models.Model):
     """
@@ -74,6 +75,14 @@ class Parto(models.Model):
     fecha_actualizacion = models.DateTimeField(
         auto_now=True,
         verbose_name="Última actualización"
+    )
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='partos_registrados',
+        verbose_name="Registrado por (Usuario)"
     )
     
     class Meta:

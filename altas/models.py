@@ -8,7 +8,7 @@ from django.utils import timezone
 
 class Alta(models.Model):
     """
-    Modelo de Alta - Módulo 4
+    Modelo de Alta médica y administrativa.
     Gestiona el proceso de alta médica y administrativa de madre y recién nacido.
     """
     

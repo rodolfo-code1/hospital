@@ -3,7 +3,6 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.utils import timezone  # Importante para el dashboard
 from .models import Alta
 from pacientes.models import Madre
 from partos.models import Parto
@@ -21,47 +20,6 @@ from .utils import generar_certificado_pdf, exportar_altas_excel
 from usuarios.decorators import rol_requerido
 
 # ==========================================
-# DASHBOARD PRINCIPAL
-# ==========================================
-
-@login_required
-def home(request):
-    """
-    Dashboard principal que renderiza opciones según el rol del usuario.
-    Muestra contadores y accesos directos personalizados.
-    """
-    user = request.user
-    context = {}
-
-    # Lógica para MÉDICOS y JEFATURA
-    if user.rol == 'medico' or user.rol == 'jefatura':
-        # Altas que tienen registros completos pero faltan confirmar clínicamente
-        context['pendientes_clinica'] = Alta.objects.filter(
-            registros_completos=True, 
-            alta_clinica_confirmada=False
-        ).count()
-
-    # Lógica para ADMINISTRATIVOS y JEFATURA
-    if user.rol == 'administrativo' or user.rol == 'jefatura':
-        # Altas que ya tienen OK médico pero falta cierre administrativo
-        context['pendientes_administrativa'] = Alta.objects.filter(
-            alta_clinica_confirmada=True, 
-            alta_administrativa_confirmada=False
-        ).count()
-    
-    # Lógica para MATRONAS y JEFATURA (Mis registros del turno)
-    if user.rol == 'matrona' or user.rol == 'jefatura':
-        hoy = timezone.now().date()
-        # Filtra los partos registrados hoy. 
-        # Nota: Si tuvieras un campo 'created_by', filtraríamos por usuario también.
-        context['registros_hoy'] = Parto.objects.filter(
-            fecha_registro__date=hoy
-        ).count()
-
-    return render(request, 'home.html', context)
-
-
-# ==========================================
 # VISTAS DE REGISTRO (MATRONA/ADMIN)
 # ==========================================
 
@@ -76,7 +34,8 @@ def registrar_madre(request):
                 request,
                 f'Madre {madre.nombre} registrada exitosamente con RUT {madre.rut}'
             )
-            return redirect('altas:home') # Redirige al dashboard
+            # CORREGIDO: Redirige al dashboard principal
+            return redirect('app:home') 
     else:
         form = MadreForm()
     
@@ -94,12 +53,15 @@ def registrar_parto(request):
     if request.method == 'POST':
         form = PartoForm(request.POST)
         if form.is_valid():
-            parto = form.save()
+            parto = form.save(commit=False) # Pausa el guardado
+            parto.creado_por = request.user # Asigna la matrona actual
+            parto.save() # Guarda definitivamente
             messages.success(
                 request,
                 f'Parto registrado exitosamente para {parto.madre.nombre}'
             )
-            return redirect('altas:home')
+            # CORREGIDO
+            return redirect('app:home')
     else:
         form = PartoForm()
     
@@ -122,7 +84,8 @@ def registrar_recien_nacido(request):
                 request,
                 f'Recién nacido registrado exitosamente. Código: {rn.codigo_unico}'
             )
-            return redirect('altas:home')
+            # CORREGIDO
+            return redirect('app:home')
     else:
         form = RecienNacidoForm()
     
@@ -237,7 +200,7 @@ def detalle_alta(request, pk):
 
 
 @login_required
-@rol_requerido('medico','jefatura')
+@rol_requerido('medico') # Nota: quitamos 'jefatura' si ya no existe ese rol
 def confirmar_alta_clinica(request, pk):
     """
     Vista para confirmar el alta clínica (Médico).
@@ -287,7 +250,7 @@ def confirmar_alta_clinica(request, pk):
 
 
 @login_required
-@rol_requerido('administrativo', 'jefatura')
+@rol_requerido('administrativo') 
 def confirmar_alta_administrativa(request, pk):
     """
     Vista para confirmar el alta administrativa (Administrativo).

@@ -1,7 +1,7 @@
 # pacientes/models.py
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from django.conf import settings
 class Madre(models.Model):
     """
     Modelo de Madre (Paciente) - Módulo 1 simplificado
@@ -66,6 +66,14 @@ class Madre(models.Model):
         verbose_name_plural = "Madres"
         ordering = ['-fecha_ingreso']
     
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='madres_registradas',
+        verbose_name="Registrado por (Usuario)"
+    )
     def __str__(self):
         return f"{self.nombre} ({self.rut})"
     

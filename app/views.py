@@ -31,7 +31,8 @@ def home(request):
     if user.rol == 'matrona':
         hoy = timezone.now().date()
         context['registros_hoy'] = Parto.objects.filter(
-            fecha_registro__date=hoy
+            fecha_registro__date=hoy,
+            creado_por=user  
         ).count()
 
     return render(request, 'home.html', context)

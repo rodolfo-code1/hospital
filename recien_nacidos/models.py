@@ -3,7 +3,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from partos.models import Parto
 import uuid
-
+from django.conf import settings
 class RecienNacido(models.Model):
     """
     Modelo de Recién Nacido 
@@ -129,6 +129,14 @@ class RecienNacido(models.Model):
         verbose_name="Última actualización"
     )
     
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='recien_nacidos_registrados',
+        verbose_name="Registrado por (Usuario)"
+    )
     class Meta:
         verbose_name = "Recién Nacido"
         verbose_name_plural = "Recién Nacidos"
