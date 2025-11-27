@@ -47,6 +47,10 @@
 <div class="col-12">
     <div class="alert alert-success d-flex justify-content-between align-items-center mb-0">
         <span><i class="bi bi-check-circle"></i> <strong>Mis Registros:</strong> Has realizado {{ registros_hoy|default:"0" }} ingresos en este turno.</span>
-        <a href class="btn btn-sm btn-light text-success fw-bold">Ver Detalle</a>
+        
+        <a href="{% url 'partos:mis_registros' %}" class="btn btn-sm btn-light text-success fw-bold">
+            Ver Mi Historial
+        </a>
+        
     </div>
 </div>

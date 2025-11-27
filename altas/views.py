@@ -29,13 +29,16 @@ def registrar_madre(request):
     if request.method == 'POST':
         form = MadreForm(request.POST)
         if form.is_valid():
-            madre = form.save()
+            # --- CORRECCIÓN: Guardar el usuario ---
+            madre = form.save(commit=False)
+            madre.creado_por = request.user
+            madre.save()
+            # -------------------------------------
             messages.success(
                 request,
                 f'Madre {madre.nombre} registrada exitosamente con RUT {madre.rut}'
             )
-            # CORREGIDO: Redirige al dashboard principal
-            return redirect('app:home') 
+            return redirect('app:home')
     else:
         form = MadreForm()
     
@@ -45,7 +48,6 @@ def registrar_madre(request):
         'subtitulo': 'Ingreso de paciente al área de obstetricia'
     }
     return render(request, 'pacientes/registrar_madre.html', context)
-
 
 @login_required
 def registrar_parto(request):
@@ -79,12 +81,15 @@ def registrar_recien_nacido(request):
     if request.method == 'POST':
         form = RecienNacidoForm(request.POST)
         if form.is_valid():
-            rn = form.save()
+            # --- CORRECCIÓN: Guardar el usuario ---
+            rn = form.save(commit=False)
+            rn.creado_por = request.user
+            rn.save()
+            # -------------------------------------
             messages.success(
                 request,
                 f'Recién nacido registrado exitosamente. Código: {rn.codigo_unico}'
             )
-            # CORREGIDO
             return redirect('app:home')
     else:
         form = RecienNacidoForm()
@@ -95,8 +100,6 @@ def registrar_recien_nacido(request):
         'subtitulo': 'Registro inicial del RN'
     }
     return render(request, 'recien_nacidos/registrar_recien_nacido.html', context)
-
-
 # ==========================================
 # GESTIÓN DE ALTAS
 # ==========================================
