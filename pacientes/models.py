@@ -52,6 +52,29 @@ class Madre(models.Model):
         verbose_name="Registrado por"
     )
 
+    ESTADO_ALTA = [
+        ('hospitalizado', 'Hospitalizado'),
+        ('alta_medica', 'Alta Médica (Esperando Admin)'),
+        ('alta_administrativa', 'Alta Completa (Egresado)'),
+    ]
+    estado_alta = models.CharField(
+        max_length=20, 
+        choices=ESTADO_ALTA, 
+        default='hospitalizado',
+        verbose_name="Estado Alta"
+    )
+    ESTADO_SALUD = [
+        ('sano', 'Sano / Alta Probable'),
+        ('observacion', 'En Observación'),
+        ('critico', 'Crítico / UCI'),
+    ]
+    estado_salud = models.CharField(
+        max_length=20, 
+        choices=ESTADO_SALUD, 
+        default='observacion',
+        verbose_name="Estado de Salud"
+    )
+
     class Meta:
         verbose_name = "Madre"
         verbose_name_plural = "Madres"

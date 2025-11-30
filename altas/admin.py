@@ -4,34 +4,10 @@ from .models import Alta
 
 @admin.register(Alta)
 class AltaAdmin(admin.ModelAdmin):
-    list_display = (
-        'madre',
-        'estado',
-        'registros_completos',
-        'alta_clinica_confirmada',
-        'alta_administrativa_confirmada',
-        'fecha_creacion'
-    )
-    list_filter = (
-        'estado',
-        'registros_completos',
-        'alta_clinica_confirmada',
-        'alta_administrativa_confirmada',
-        'fecha_creacion'
-    )
-    search_fields = (
-        'madre__nombre',
-        'madre__rut',
-        'medico_confirma',
-        'administrativo_confirma'
-    )
-    readonly_fields = (
-        'fecha_creacion',
-        'fecha_actualizacion',
-        'fecha_confirmacion_clinica',
-        'fecha_confirmacion_administrativa',
-        'fecha_alta'
-    )
+    list_display = ('__str__', 'estado', 'fecha_creacion')
+    list_filter = ('estado', 'registros_completos', 'fecha_creacion')
+    search_fields = ('madre__nombre', 'madre__rut')
+    readonly_fields = ('fecha_creacion', 'fecha_actualizacion', 'fecha_alta')
     
     fieldsets = (
         ('Información del Alta', {

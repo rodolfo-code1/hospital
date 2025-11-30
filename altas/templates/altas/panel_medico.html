@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel Médico - Hospitalización{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="text-primary mb-0"><i class="bi bi-hospital"></i> Gestión de Altas Médicas</h2>
+        <p class="text-muted mb-0">Pacientes hospitalizados listos para evaluación.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'app:home' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Panel
+        </a>
+    </div>
+</div>
+
+{% for madre in pacientes %}
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-header bg-light py-3">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <h5 class="mb-0 text-primary fw-bold">
+                    <i class="bi bi-person-standing-dress"></i> {{ madre.nombre }}
+                </h5>
+                <small class="text-muted">RUT: {{ madre.rut }}</small>
+            </div>
+            
+            <div class="col-md-3">
+                <form action="{% url 'altas:cambiar_salud' 'madre' madre.pk %}" method="post">
+                    {% csrf_token %}
+                    <select name="estado_salud" class="form-select form-select-sm fw-bold 
+                        {% if madre.estado_salud == 'sano' %}text-success border-success{% elif madre.estado_salud == 'critico' %}text-danger border-danger{% else %}text-warning border-warning{% endif %}" 
+                        onchange="this.form.submit()">
+                        <option value="sano" {% if madre.estado_salud == 'sano' %}selected{% endif %}>🟢 Alta Probable</option>
+                        <option value="observacion" {% if madre.estado_salud == 'observacion' %}selected{% endif %}>🟡 Observación</option>
+                        <option value="critico" {% if madre.estado_salud == 'critico' %}selected{% endif %}>🔴 Crítico</option>
+                    </select>
+                </form>
+            </div>
+
+            <div class="col-md-5 text-end">
+                {% if madre.estado_alta == 'hospitalizado' %}
+                    {% if madre.estado_salud == 'sano' %}
+                        <a href="{% url 'altas:crear_alta' %}?madre={{ madre.pk }}" class="btn btn-success btn-sm shadow-sm">
+                            <i class="bi bi-file-earmark-check"></i> Generar Alta
+                        </a>
+                    {% else %}
+                        <button class="btn btn-secondary btn-sm opacity-50" disabled title="Paciente debe estar sana">
+                            <i class="bi bi-lock"></i> En Tratamiento
+                        </button>
+                    {% endif %}
+                {% else %}
+                    <span class="badge bg-info text-dark p-2"><i class="bi bi-arrow-repeat"></i> Alta en Proceso</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table mb-0 align-middle table-hover">
+                <thead class="table-light text-muted small">
+                    <tr>
+                        <th class="ps-4">Recién Nacido</th>
+                        <th>Estado Salud</th>
+                        <th class="text-end pe-4">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for parto in madre.partos.all %}
+                    {% for rn in parto.recien_nacidos.all %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-secondary">
+                            <i class="bi bi-emoji-smile"></i> {{ rn.codigo_unico }}
+                        </td>
+                        <td>
+                            <form action="{% url 'altas:cambiar_salud' 'rn' rn.pk %}" method="post">
+                                {% csrf_token %}
+                                <select name="estado_salud" class="form-select form-select-sm w-auto border-0 bg-transparent
+                                    {% if rn.estado_salud == 'sano' %}text-success fw-bold{% elif rn.estado_salud == 'critico' %}text-danger fw-bold{% else %}text-warning fw-bold{% endif %}"
+                                    onchange="this.form.submit()">
+                                    <option value="sano" {% if rn.estado_salud == 'sano' %}selected{% endif %}>🟢 Sano</option>
+                                    <option value="observacion" {% if rn.estado_salud == 'observacion' %}selected{% endif %}>🟡 Obs.</option>
+                                    <option value="critico" {% if rn.estado_salud == 'critico' %}selected{% endif %}>🔴 UCI</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td class="text-end pe-4">
+                            {% if rn.estado_alta == 'hospitalizado' %}
+                                {% if rn.estado_salud == 'sano' %}
+                                    <a href="{% url 'altas:crear_alta' %}?rn={{ rn.pk }}" class="btn btn-outline-success btn-sm">
+                                        <i class="bi bi-file-earmark-check"></i> Alta RN
+                                    </a>
+                                {% else %}
+                                    <span class="badge bg-light text-secondary border">Hospitalizado</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-info text-dark">En Alta</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="alert alert-success text-center py-5 shadow-sm">
+    <h4><i class="bi bi-check-circle"></i> Sin pacientes pendientes</h4>
+    <p class="text-muted">No hay pacientes hospitalizados para revisión de alta.</p>
+</div>
+{% endfor %}
+
+<div class="d-flex justify-content-center mt-5 mb-4">
+    <a href="{% url 'app:home' %}" class="btn btn-secondary px-4 btn-lg shadow-sm">
+        <i class="bi bi-house-door-fill"></i> Volver al Panel Principal
+    </a>
+</div>
+
+{% endblock %}

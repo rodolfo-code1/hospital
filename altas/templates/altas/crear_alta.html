@@ -1,74 +1,174 @@
 {% extends 'base.html' %}
 
-{% block title %}Crear Nueva Alta {% endblock %}
+{% block title %}Generar Alta Médica{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 mx-auto">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="bi bi-plus-circle"></i> {{ titulo }}</h4>
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="bi bi-file-medical-fill"></i> Generar Alta Médica</h4>
+                    <small class="opacity-75">Paso 1 de 2: Selección de Pacientes</small>
+                </div>
             </div>
-            <div class="card-body">
+            
+            <div class="card-body p-4">
+                <div class="alert alert-light border-primary border-start border-4 mb-4">
+                    <div class="d-flex">
+                        <div class="me-3 text-primary fs-4"><i class="bi bi-info-circle"></i></div>
+                        <div>
+                            <strong>Instrucciones:</strong> Seleccione a los pacientes que se irán de alta. 
+                            Solo aparecen en la lista aquellos que tienen el estado de salud 
+                            <span class="badge bg-success">Sano / Alta Probable</span>.
+                            <br>
+                            <small class="text-muted">Puede generar un alta conjunta (Madre + Hijo) o individual.</small>
+                        </div>
+                    </div>
+                </div>
+
                 <form method="post">
                     {% csrf_token %}
                     
-                    <div class="mb-3">
-                        {{ form.madre.label_tag }}
-                        {{ form.madre }}
-                        {% if form.madre.errors %}
-                            <div class="text-danger">{{ form.madre.errors }}</div>
-                        {% endif %}
-                        <small class="form-text text-muted">Selecciona la madre para iniciar el proceso de alta</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.parto.label_tag }}
-                        {{ form.parto }}
-                        {% if form.parto.errors %}
-                            <div class="text-danger">{{ form.parto.errors }}</div>
-                        {% endif %}
-                        <small class="form-text text-muted">Selecciona el parto correspondiente</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.recien_nacido.label_tag }}
-                        {{ form.recien_nacido }}
-                        {% if form.recien_nacido.errors %}
-                            <div class="text-danger">{{ form.recien_nacido.errors }}</div>
-                        {% endif %}
-                        <small class="form-text text-muted">Selecciona el recién nacido</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        {{ form.observaciones.label_tag }}
-                        {{ form.observaciones }}
-                        {% if form.observaciones.errors %}
-                            <div class="text-danger">{{ form.observaciones.errors }}</div>
-                        {% endif %}
-                    </div>
-                    
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            {{ form.non_field_errors }}
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card h-100 border-secondary border-opacity-25 bg-light">
+                                <div class="card-header bg-white border-bottom-0 fw-bold text-secondary">
+                                    <i class="bi bi-person-standing-dress"></i> Paciente Adulto (Madre)
+                                </div>
+                                <div class="card-body">
+                                    <label class="form-label small text-muted">Seleccione Madre (Opcional)</label>
+                                    {{ form.madre }}
+                                    <div class="form-text text-danger">{{ form.madre.errors }}</div>
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="col-md-6">
+                            <div class="card h-100 border-secondary border-opacity-25 bg-light">
+                                <div class="card-header bg-white border-bottom-0 fw-bold text-secondary">
+                                    <i class="bi bi-emoji-smile"></i> Paciente Neonatal (RN)
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2 d-none"> <label>Parto Asociado</label>
+                                        {{ form.parto }}
+                                    </div>
+
+                                    <label class="form-label small text-muted">Seleccione Recién Nacido (Opcional)</label>
+                                    {{ form.recien_nacido }}
+                                    <div class="form-text text-danger">{{ form.recien_nacido.errors }}</div>
+                                    
+                                    <div id="rn-feedback" class="small mt-2 text-info" style="display:none;">
+                                        <i class="bi bi-link"></i> Mostrando solo hijos de la madre seleccionada.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Indicaciones Médicas de Alta</label>
+                            {{ form.observaciones }}
+                            <div class="form-text">{{ form.observaciones.help_text }}</div>
+                        </div>
+                    </div>
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-3">
+                        <i class="bi bi-exclamation-triangle"></i> {{ form.non_field_errors }}
+                    </div>
                     {% endif %}
-                    
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'altas:panel_medico' %}" class="btn btn-outline-secondary px-4">
+                            <i class="bi bi-arrow-left"></i> Volver al Panel Médico
                         </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save"></i> Crear Alta
+                        <button type="submit" class="btn btn-success px-5 btn-lg">
+                            Confirmar y Generar <i class="bi bi-chevron-right"></i>
                         </button>
                     </div>
                 </form>
             </div>
         </div>
-        
-        <div class="alert alert-info mt-3">
-            <i class="bi bi-info-circle"></i> <strong>Nota:</strong> Al crear el alta, el sistema validará automáticamente que todos los registros estén completos.
-        </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Datos recibidos del View (Diccionarios JSON)
+        const partosData = JSON.parse('{{ json_partos|safe }}');
+        const rnsData = JSON.parse('{{ json_rns|safe }}');
+
+        const selectMadre = document.getElementById('id_madre');
+        const selectParto = document.getElementById('id_parto');
+        const selectRN = document.getElementById('id_recien_nacido');
+        const feedbackRN = document.getElementById('rn-feedback');
+
+        // Función para reconstruir un select
+        function actualizarSelect(select, opciones) {
+            // Guardar valor actual si existe
+            const valorPrevio = select.value;
+            
+            // Limpiar
+            select.innerHTML = '<option value="" selected>---------</option>';
+            
+            // Rellenar
+            if (opciones) {
+                opciones.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.text = item.nombre;
+                    select.appendChild(option);
+                });
+            }
+            
+            // Intentar restaurar valor si sigue siendo válido
+            if (valorPrevio) {
+                // Verificar si el valor previo existe en las nuevas opciones
+                for (let i=0; i < select.options.length; i++) {
+                    if (select.options[i].value == valorPrevio) {
+                        select.value = valorPrevio;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Evento: Cambio de Madre
+        selectMadre.addEventListener('change', function() {
+            const madreId = this.value;
+
+            if (madreId) {
+                // Si seleccionó madre, filtramos los hijos
+                const hijosFiltrados = rnsData[madreId] || [];
+                actualizarSelect(selectRN, hijosFiltrados);
+                
+                // Filtramos partos (aunque está oculto, es bueno mantener coherencia)
+                const partosFiltrados = partosData[madreId] || [];
+                actualizarSelect(selectParto, partosFiltrados);
+                
+                // Auto-seleccionar si hay solo 1 opción (Mejora UX)
+                if (hijosFiltrados.length === 1) {
+                    selectRN.value = hijosFiltrados[0].id;
+                }
+
+                feedbackRN.style.display = 'block';
+            } else {
+                // Si deselecciona madre, ¿qué hacemos?
+                // Opción A: Mostrar todos los RN huérfanos/hospitalizados (flexible)
+                // Opción B: Limpiar todo.
+                // Usaremos lógica del backend inicial (recargar para resetear o dejar vacío)
+                // Para simplificar en JS: dejamos vacío para obligar a re-seleccionar con coherencia
+                actualizarSelect(selectRN, []); 
+                feedbackRN.style.display = 'none';
+            }
+        });
+        
+        // Inicializar estado (por si hay error de validación y la página recarga con datos)
+        if (selectMadre.value) {
+            selectMadre.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
 {% endblock %}
