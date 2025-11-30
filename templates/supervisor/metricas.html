@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}Métricas y Estadísticas - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1><i class="fas fa-chart-line"></i> {{ titulo }}</h1>
+            <hr>
+            <p class="text-muted">
+                Análisis estadístico y visualizaciones de los datos del sistema hospitalario.
+            </p>
+        </div>
+    </div>
+
+    <!-- Gráfico de Partos por Mes -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-bar"></i> Partos por Mes (2025)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:400px;">
+                        <canvas id="graficoPartosMensual"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Gráfico de Tipos de Parto -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-pie-chart"></i> Distribución por Tipo de Parto
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height:300px;">
+                        <canvas id="graficoTiposParto"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas de Recién Nacidos -->
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-baby"></i> Estado de Recién Nacidos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <h3 class="text-success">{{ metricas_generales.estadisticas_recien_nacidos.total_vivos }}</h3>
+                                <p class="text-muted mb-0">Nacidos Vivos</p>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <h3 class="text-danger">{{ metricas_generales.estadisticas_recien_nacidos.total_fallecidos }}</h3>
+                                <p class="text-muted mb-0">Nacidos Fallecidos</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-center">
+                            <strong>Peso Promedio:</strong> 
+                            {{ metricas_generales.estadisticas_recien_nacidos.peso_promedio|default:0|floatformat:2 }} kg
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Estadísticas Mensuales -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-table"></i> Resumen Mensual de Partos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Mes</th>
+                                    <th>Número de Partos</th>
+                                    <th>Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dato in metricas_generales.datos_mensuales %}
+                                <tr>
+                                    <td>{{ dato.mes }}</td>
+                                    <td>{{ dato.partos }}</td>
+                                    <td>
+                                        {% if metricas_generales.datos_mensuales %}
+                                            {% widthratio dato.partos metricas_generales.datos_mensuales|length 100 %}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores Clave -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Tasa de Supervivencia
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if metricas_generales.estadisticas_recien_nacidos.total_vivos %}
+                                    {% widthratio metricas_generales.estadisticas_recien_nacidos.total_vivos metricas_generales.estadisticas_recien_nacidos.total_vivos|add:metricas_generales.estadisticas_recien_nacidos.total_fallecidos 100|floatformat:1 }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-heartbeat fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Peso Promedio RN
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ metricas_generales.estadisticas_recien_nacidos.peso_promedio|default:0|floatformat:2 }} kg
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-weight fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Partos Promedio/Mes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if metricas_generales.datos_mensuales %}
+                                    {% widthratio metricas_generales.datos_mensuales|length|add:0 metricas_generales.datos_mensuales|length 1 %}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Partos 2025
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_partos_2025 }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-baby fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts para los gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de Partos por Mes
+const ctxMensual = document.getElementById('graficoPartosMensual').getContext('2d');
+new Chart(ctxMensual, {
+    type: 'line',
+    data: {
+        labels: [
+            {% for dato in metricas_generales.datos_mensuales %}
+                '{{ dato.mes }}'{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Número de Partos',
+            data: [
+                {% for dato in metricas_generales.datos_mensuales %}
+                    {{ dato.partos }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Gráfico de Tipos de Parto
+const ctxTipos = document.getElementById('graficoTiposParto').getContext('2d');
+new Chart(ctxTipos, {
+    type: 'doughnut',
+    data: {
+        labels: [
+            {% for tipo in metricas_generales.tipos_parto %}
+                '{{ tipo.tipo_parto|default:"Sin especificar" }}'{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for tipo in metricas_generales.tipos_parto %}
+                    {{ tipo.total }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 205, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

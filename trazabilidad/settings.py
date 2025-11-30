@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'recien_nacidos',
     'altas',
     'reportes',
+    'auditoria',
 ]
 
 MIDDLEWARE = [
@@ -59,6 +60,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'auditoria.middleware.AuditoriaMiddleware',
 ]
 
 ROOT_URLCONF = 'trazabilidad.urls'

@@ -48,5 +48,138 @@
             {% include 'componentes/panel/ti.html' %}
         {% endif %}
     </div>
+
+    <!-- Dashboard específico para Supervisores - cuando no hay componentes -->
+    {% if user.rol == 'supervisor' and not user.rol == 'encargado_ti' %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1><i class="bi bi-shield-check-fill text-warning"></i> Dashboard Supervisor</h1>
+                    <a href="{% url 'app:supervisor_dashboard' %}" class="btn btn-primary">
+                        <i class="bi bi-speedometer2"></i> Ver Dashboard Completo
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjetas de resumen rápido para supervisor -->
+        <div class="row">
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                    Usuarios Activos
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ total_usuarios_activos|default:0 }}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-people-fill fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                    Madres Registradas
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ total_madres_registradas|default:0 }}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-person-fill-add fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-info shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                    Partos Este Mes
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                    {{ total_partos_mes|default:0 }}
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-baby fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                    Acceso Supervisor
+                                </div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">Activo</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-shield-check-fill fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accesos rápidos para supervisor -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="bi bi-lightning-fill"></i> Accesos Rápidos - Supervisor
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <a href="{% url 'app:supervisor_reportes' %}" class="btn btn-primary btn-block p-3">
+                                    <i class="bi bi-file-medical-alt d-block mb-2" style="font-size: 2rem;"></i>
+                                    <strong>Reportes REM A24</strong>
+                                    <br><small>Partos, IVE, Anticonceptivos, RN</small>
+                                </a>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <a href="{% url 'app:supervisor_auditoria' %}" class="btn btn-warning btn-block p-3">
+                                    <i class="bi bi-search d-block mb-2" style="font-size: 2rem;"></i>
+                                    <strong>Sistema de Auditoría</strong>
+                                    <br><small>Trazabilidad y seguimiento</small>
+                                </a>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <a href="{% url 'app:supervisor_metricas' %}" class="btn btn-success btn-block p-3">
+                                    <i class="bi bi-bar-chart-line d-block mb-2" style="font-size: 2rem;"></i>
+                                    <strong>Métricas y Estadísticas</strong>
+                                    <br><small>Gráficos y análisis</small>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

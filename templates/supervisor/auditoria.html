@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+
+{% block title %}Sistema de Auditoría - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1><i class="fas fa-shield-alt"></i> {{ titulo }}</h1>
+            <hr>
+            <p class="text-muted">
+                Sistema de seguimiento y auditoría de todas las acciones realizadas en el sistema.
+                Permite revisar modificaciones, usuarios responsables y realizar análisis de trazabilidad.
+            </p>
+        </div>
+    </div>
+
+    <!-- Estadísticas de Auditoría -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Registros
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ resumen_auditoria.total_registros }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-database fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Esta Semana
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ resumen_auditoria.registros_semana }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-week fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Este Mes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ resumen_auditoria.registros_mes }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Usuarios Activos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ resumen_auditoria.usuarios_activos }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navegación Rápida -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-navigation"></i> Opciones de Auditoría
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <a href="{% url 'auditoria:lista_auditoria' %}" class="btn btn-primary btn-block">
+                                <i class="fas fa-list"></i> Ver Todos los Registros
+                            </a>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <a href="#" onclick="exportarAuditoria()" class="btn btn-success btn-block">
+                                <i class="fas fa-download"></i> Exportar Auditoría
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros de Auditoría -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-filter"></i> Filtros Avanzados
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'auditoria:lista_auditoria' %}" id="filtrosAuditoria">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="usuario" class="form-label">Usuario</label>
+                                <select class="form-control" id="usuario" name="usuario">
+                                    <option value="">Todos los usuarios</option>
+                                    <!-- Aquí se cargarían los usuarios dinámicamente -->
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="accion" class="form-label">Acción</label>
+                                <select class="form-control" id="accion" name="accion">
+                                    <option value="">Todas las acciones</option>
+                                    <option value="create">Crear</option>
+                                    <option value="update">Actualizar</option>
+                                    <option value="delete">Eliminar</option>
+                                    <option value="view">Ver</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="fecha_desde" class="form-label">Fecha Desde</label>
+                                <input type="date" class="form-control" id="fecha_desde" name="fecha_desde">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+                                <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label for="busqueda" class="form-label">Búsqueda de Texto</label>
+                                <input type="text" class="form-control" id="busqueda" name="busqueda" 
+                                       placeholder="Buscar en descripciones...">
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary mr-2">
+                                    <i class="fas fa-search"></i> Filtrar
+                                </button>
+                                <button type="reset" class="btn btn-secondary" onclick="limpiarFiltros()">
+                                    <i class="fas fa-times"></i> Limpiar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Sistema -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5><i class="fas fa-info-circle text-info"></i> Acerca del Sistema de Auditoría</h5>
+                    <p class="mb-2">
+                        Este sistema registra automáticamente todas las acciones realizadas en el sistema:
+                    </p>
+                    <ul class="mb-0">
+                        <li><strong>Creación:</strong> Nuevos registros de pacientes, partos, recién nacidos</li>
+                        <li><strong>Actualización:</strong> Modificaciones en datos existentes</li>
+                        <li><strong>Eliminación:</strong> Registros eliminados del sistema</li>
+                        <li><strong>Consultas:</strong> Visualización de información sensible</li>
+                        <li><strong>Autenticación:</strong> Inicios y cierres de sesión</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function limpiarFiltros() {
+    document.getElementById('filtrosAuditoria').reset();
+    window.location.href = "{% url 'auditoria:lista_auditoria' %}";
+}
+
+function exportarAuditoria() {
+    // Implementar funcionalidad de exportación
+    alert('Función de exportación en desarrollo');
+}
+</script>
+{% endblock %}

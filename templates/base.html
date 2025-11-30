@@ -31,6 +31,48 @@
                             </a> 
                         </li>
 
+                        <!-- Navegación para Supervisores -->
+                        {% if user.rol == 'supervisor' %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-warning" href="#" id="supervisorDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-shield-check-fill"></i> Supervisor
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'app:supervisor_dashboard' %}">
+                                    <i class="bi bi-speedometer2"></i> Dashboard Supervisor
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><h6 class="dropdown-header">Reportes REM A24</h6></li>
+                                <li><a class="dropdown-item" href="{% url 'app:supervisor_reportes' %}">
+                                    <i class="bi bi-file-medical-alt"></i> Reportes Generales
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'app:reporte_partos' %}">
+                                    <i class="bi bi-baby"></i> Partos (Sección A)
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'app:reporte_ive' %}">
+                                    <i class="bi bi-heart-fill"></i> IVE (Sección B)
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'app:reporte_anticonceptivos' %}">
+                                    <i class="bi bi-pills"></i> Anticonceptivos (Sección C)
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'app:reporte_recien_nacidos' %}">
+                                    <i class="bi bi-baby-carry"></i> Recién Nacidos (Sección D)
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'app:supervisor_auditoria' %}">
+                                    <i class="bi bi-search"></i> Sistema de Auditoría
+                                </a></li>
+                                <li><a class="dropdown-item" href="{% url 'app:supervisor_metricas' %}">
+                                    <i class="bi bi-bar-chart-line"></i> Métricas y Estadísticas
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'auditoria:lista_auditoria' %}">
+                                    <i class="bi bi-list-ul"></i> Lista de Auditoría
+                                </a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
+
                         {% if user.rol == 'encargado_ti' or user.is_staff %}
                         <li class="nav-item">
                             <a class="nav-link text-warning" href="/admin/" target="_blank">

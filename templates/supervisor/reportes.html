@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Reportes REM A24 - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h1><i class="fas fa-file-medical-alt"></i> {{ titulo }}</h1>
+            <hr>
+            <p class="text-muted">
+                Sistema de reportes basado en el Registro Estadístico Mensual A24 para 
+                Atención Obstétrica y del Recién Nacido
+            </p>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for seccion in secciones %}
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="{{ seccion.icono }}"></i> Sección {{ seccion.codigo }}: {{ seccion.nombre }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ seccion.descripcion }}</p>
+                    
+                    <h6 class="text-primary mt-3">Reportes Disponibles:</h6>
+                    <ul class="list-unstyled">
+                        {% for enlace in seccion.enlaces %}
+                        <li class="mb-2">
+                            <a href="{% url enlace.url %}{{ enlace.parametros }}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-file-export"></i> {{ enlace.nombre }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5><i class="fas fa-info-circle text-info"></i> Acerca de los Reportes REM A24</h5>
+                    <p class="mb-2">
+                        El <strong>REM A24</strong> es un documento oficial del Ministerio de Salud de Chile 
+                        que registra información sobre:
+                    </p>
+                    <ul class="mb-0">
+                        <li><strong>Sección A:</strong> Información general de partos (vaginales, cesáreas, complicaciones)</li>
+                        <li><strong>Sección B:</strong> Interrupción voluntaria del embarazo (IVE)</li>
+                        <li><strong>Sección C:</strong> Métodos anticonceptivos prescritos al alta</li>
+                        <li><strong>Sección D:</strong> Información de recién nacidos (vivos y fallecidos)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Opciones de Filtro General -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-filter"></i> Filtros Globales
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row">
+                        <div class="col-md-4">
+                            <label for="fecha_desde" class="form-label">Fecha Desde</label>
+                            <input type="date" class="form-control" id="fecha_desde" name="fecha_desde">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+                            <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Aplicar Filtros
+                            </button>
+                            <a href="{% url 'app:supervisor_reportes' %}" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
