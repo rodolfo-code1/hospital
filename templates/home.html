@@ -47,6 +47,21 @@
         {% if user.rol == 'encargado_ti' %}
             {% include 'componentes/panel/ti.html' %}
         {% endif %}
+
+        {% if user.rol == 'recepcionista' %}
+            {% include 'componentes/panel/recepcionista.html' %}
+        {% endif %}
+        
+        {% if user.rol == 'jefatura' %}
+            {% include 'componentes/panel/matrona.html' %}
+            <hr>
+            {% include 'componentes/panel/medico.html' %}
+            <hr>
+            {% include 'componentes/panel/administrativo.html' %}
+            <hr>
+            {% include 'componentes/panel/recepcionista.html' %}
+        {% endif %}
+
     </div>
 </div>
 {% endblock %}

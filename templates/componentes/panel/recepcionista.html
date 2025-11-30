@@ -1,0 +1,27 @@
+<div class="col-12"><h5 class="text-secondary border-bottom pb-2"><i class="bi bi-building-fill-add"></i> Módulo de Admisión</h5></div>
+
+<div class="col-md-4">
+    <div class="card h-100 shadow-sm border-0 border-start border-primary border-5 hover-shadow">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <div class="fs-1 text-primary me-3"><i class="bi bi-person-vcard"></i></div>
+                <div>
+                    <h5 class="card-title fw-bold mb-0">Ingresar Paciente</h5>
+                    <small class="text-muted">Registro demográfico</small>
+                </div>
+            </div>
+            <p class="card-text small">Registrar RUT, previsión y datos de contacto de nuevas pacientes.</p>
+            <a href="{% url 'pacientes:admision_madre' %}" class="btn btn-primary w-100 stretched-link">Iniciar Admisión</a>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-4">
+    <div class="card h-100 shadow-sm border-0 bg-light">
+        <div class="card-body text-center d-flex flex-column justify-content-center">
+            <h5 class="text-muted"><i class="bi bi-search"></i> Buscar Ficha</h5>
+            <p class="small mb-0">Consulta de datos de contacto.</p>
+            <button class="btn btn-sm btn-outline-secondary mt-2" disabled>Próximamente</button>
+        </div>
+    </div>
+</div>

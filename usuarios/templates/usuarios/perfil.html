@@ -39,35 +39,37 @@
                     <strong><i class="bi bi-info-circle"></i> Permisos de tu rol:</strong>
                     <ul class="mb-0 mt-2">
                         {% if user.rol == 'medico' %}
-                            <li>Registrar partos y recién nacidos</li>
                             <li>Confirmar altas clínicas</li>
-                            <li>Ver historial completo</li>
+                            <li>Revisar historial de pacientes</li>
+                            <li>Visualizar alertas médicas</li>
+
                         {% elif user.rol == 'matrona' %}
-                            <li>Registrar madres, partos y recién nacidos</li>
-                            <li>Ver historial completo</li>
+                            <li>Registrar Partos y Recién Nacidos</li>
+                            <li>Completar fichas clínicas (Antecedentes)</li>
+                            <li>Ver historial de registros propios</li>
+
+                        {% elif user.rol == 'recepcionista' %}
+                            <li>Ingreso de pacientes (Admisión)</li>
+                            <li>Registro de datos demográficos</li>
+                            <li>Generación de alertas de ingreso</li>
+
                         {% elif user.rol == 'administrativo' %}
-                            <li>Registrar madres</li>
                             <li>Confirmar altas administrativas</li>
-                            <li>Exportar reportes</li>
-                        {% elif user.rol == 'enfermero' %}
-                            <li>Registrar recién nacidos</li>
-                            <li>Ver información clínica</li>
-                        {% elif user.rol == 'jefatura' %}
-                            <li>Acceso total al sistema</li>
-                            <li>Todos los permisos disponibles</li>
+                            <li>Generar certificados de alta</li>
+                            <li>Cierre de procesos de hospitalización</li>
+
                         {% elif user.rol == 'supervisor' %}
                             <li>Auditoría de registros médicos</li>
-                            <li>Supervisión de tiempos de respuesta</li>
-                            <li>Generación de reportes de gestión</li>
+                            <li>Generación de reportes de gestión (REM)</li>
+                            <li>Visualización completa del sistema</li>
+
                         {% elif user.rol == 'encargado_ti' %}
                             <li>Gestión de usuarios y claves</li>
-                            <li>Respaldo de base de datos</li>
                             <li>Configuración del sistema</li>
-                            <li>Acceso a logs de errores</li>
+                            <li>Mantenimiento y logs</li>
                         {% endif %}
                     </ul>
                 </div>
-                
                 <div class="d-grid gap-2">
                     <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Volver al Inicio

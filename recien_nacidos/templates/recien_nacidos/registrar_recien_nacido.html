@@ -4,8 +4,8 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-10 mx-auto">
-        <div class="card">
+    <div class="col-md-12 mx-auto">
+        <div class="card shadow">
             <div class="card-header bg-secondary text-white">
                 <h4 class="mb-0"><i class="bi bi-heart"></i> {{ titulo }}</h4>
                 <p class="mb-0 mt-1"><small>{{ subtitulo }}</small></p>
@@ -14,115 +14,135 @@
                 <form method="post">
                     {% csrf_token %}
                     
-                    <h5 class="mb-3"><i class="bi bi-link-45deg"></i> Vinculación</h5>
-                    <div class="row">
-                        <div class="col-md-8 mb-3">
+                    <h5 class="mb-3 border-bottom pb-2"><i class="bi bi-link-45deg"></i> Datos Básicos</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
                             {{ form.parto.label_tag }}
                             {{ form.parto }}
-                            {% if form.parto.errors %}<div class="text-danger">{{ form.parto.errors }}</div>{% endif %}
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-6">
                             {{ form.nombre.label_tag }}
                             {{ form.nombre }}
-                            {% if form.nombre.errors %}<div class="text-danger">{{ form.nombre.errors }}</div>{% endif %}
                         </div>
                     </div>
                     
-                    <hr>
-                    
-                    <h5 class="mb-3"><i class="bi bi-clipboard2-pulse"></i> Datos Clínicos</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
+                    <h5 class="mb-3 border-bottom pb-2"><i class="bi bi-rulers"></i> Antropometría</h5>
+                    <div class="row mb-3 bg-light p-3 rounded mx-1">
+                        <div class="col-md-3">
                             {{ form.sexo.label_tag }}
                             {{ form.sexo }}
-                            {% if form.sexo.errors %}<div class="text-danger">{{ form.sexo.errors }}</div>{% endif %}
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3">
                             {{ form.peso.label_tag }}
                             {{ form.peso }}
-                            {% if form.peso.errors %}<div class="text-danger">{{ form.peso.errors }}</div>{% endif %}
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3">
                             {{ form.talla.label_tag }}
                             {{ form.talla }}
-                            {% if form.talla.errors %}<div class="text-danger">{{ form.talla.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            {{ form.perimetro_cefalico.label_tag }} {{ form.perimetro_cefalico }}
                         </div>
                     </div>
                     
-                    <div class="mb-3">
-                        {{ form.condicion_nacimiento.label_tag }}
-                        {{ form.condicion_nacimiento }}
-                        {% if form.condicion_nacimiento.errors %}<div class="text-danger">{{ form.condicion_nacimiento.errors }}</div>{% endif %}
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            {{ form.condicion_nacimiento.label_tag }}
+                            {{ form.condicion_nacimiento }}
+                        </div>
                     </div>
                     
-                    <hr>
-                    
-                    <h5 class="mb-3"><i class="bi bi-heart-pulse"></i> Puntuación de Vitalidad (Test APGAR)</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            {{ form.apgar_1_min.label_tag }}
+                    <h5 class="mb-3 border-bottom pb-2"><i class="bi bi-heart-pulse"></i> Test APGAR</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Minuto 1</label>
                             {{ form.apgar_1_min }}
-                            {% if form.apgar_1_min.errors %}<div class="text-danger">{{ form.apgar_1_min.errors }}</div>{% endif %}
                         </div>
-                        <div class="col-md-4 mb-3">
-                            {{ form.apgar_5_min.label_tag }}
+                        <div class="col-md-4">
+                            <label class="form-label">Minuto 5</label>
                             {{ form.apgar_5_min }}
-                            {% if form.apgar_5_min.errors %}<div class="text-danger">{{ form.apgar_5_min.errors }}</div>{% endif %}
                         </div>
-                        <div class="col-md-4 mb-3">
-                            {{ form.apgar_10_min.label_tag }}
+                        <div class="col-md-4">
+                            <label class="form-label">Minuto 10 (Opcional)</label>
                             {{ form.apgar_10_min }}
-                            <small class="form-text text-muted">Opcional</small>
-                            {% if form.apgar_10_min.errors %}<div class="text-danger">{{ form.apgar_10_min.errors }}</div>{% endif %}
                         </div>
                     </div>
                     
-                    <hr>
-                    
-                    <h5 class="mb-3"><i class="bi bi-arrow-right-circle"></i> Derivación</h5>
-                    <div class="mb-3 form-check">
-                        {{ form.requiere_derivacion }}
-                        <label class="form-check-label" for="{{ form.requiere_derivacion.id_for_label }}">
-                            {{ form.requiere_derivacion.label }}
-                        </label>
-                        {% if form.requiere_derivacion.errors %}<div class="text-danger">{{ form.requiere_derivacion.errors }}</div>{% endif %}
+                    <h5 class="mb-3 border-bottom pb-2"><i class="bi bi-star"></i> Indicadores de Calidad</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                {{ form.apego_piel_a_piel }}
+                                <label class="form-check-label">Apego Piel a Piel</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                {{ form.lactancia_precoz }}
+                                <label class="form-check-label">Lactancia < 1 hora</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                {{ form.profilaxis_ocular }}
+                                <label class="form-check-label">Profilaxis Ocular</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 border-bottom pb-2"><i class="bi bi-eyedropper"></i> Inmunizaciones</h5>
+                    <div class="card mb-3">
+                        <div class="card-body bg-light">
+                            <div class="row align-items-center mb-2">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        {{ form.vacuna_hepatitis_b }}
+                                        <label class="form-check-label fw-bold">Vacuna Hepatitis B</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    {{ form.responsable_vacuna_vhb.label_tag }}
+                                    {{ form.responsable_vacuna_vhb }}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-check">
+                                        {{ form.vacuna_bcg }}
+                                        <label class="form-check-label fw-bold">Vacuna BCG</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     
+                    <h5 class="mb-3 border-bottom pb-2"><i class="bi bi-arrow-right-circle"></i> Derivación</h5>
                     <div class="mb-3">
+                        <div class="form-check mb-2">
+                            {{ form.requiere_derivacion }}
+                            <label class="form-check-label">¿Requiere derivación?</label>
+                        </div>
                         {{ form.servicio_derivacion.label_tag }}
                         {{ form.servicio_derivacion }}
-                        <small class="form-text text-muted">Ej: UCI Neonatal, Neonatología</small>
-                        {% if form.servicio_derivacion.errors %}<div class="text-danger">{{ form.servicio_derivacion.errors }}</div>{% endif %}
                     </div>
                     
-                    <hr>
-                    
-                    <h5 class="mb-3"><i class="bi bi-clipboard-check"></i> Procedimientos</h5>
-                    <div class="mb-3">
-                        {{ form.vacunas_aplicadas.label_tag }}
-                        {{ form.vacunas_aplicadas }}
-                        {% if form.vacunas_aplicadas.errors %}<div class="text-danger">{{ form.vacunas_aplicadas.errors }}</div>{% endif %}
-                    </div>
-                    
+                    <h5 class="mb-3 border-bottom pb-2"><i class="bi bi-clipboard"></i> Otros</h5>
                     <div class="mb-3">
                         {{ form.examenes_realizados.label_tag }}
                         {{ form.examenes_realizados }}
-                        {% if form.examenes_realizados.errors %}<div class="text-danger">{{ form.examenes_realizados.errors }}</div>{% endif %}
                     </div>
-                    
                     <div class="mb-3">
                         {{ form.observaciones.label_tag }}
                         {{ form.observaciones }}
-                        {% if form.observaciones.errors %}<div class="text-danger">{{ form.observaciones.errors }}</div>{% endif %}
                     </div>
                     
                     <hr>
                     
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
+                        <a href="{% url 'app:home' %}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
-                        <button type="submit" class="btn btn-secondary">
+                        <button type="submit" class="btn btn-success">
                             <i class="bi bi-save"></i> Registrar Recién Nacido
                         </button>
                     </div>

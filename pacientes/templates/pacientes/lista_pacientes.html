@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Listado de Pacientes{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2><i class="bi bi-people-fill"></i> Pacientes Ingresadas</h2>
+        <p class="text-muted">Gestión de admisiones y alertas clínicas.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'app:home' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Panel
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4 border-0 shadow-sm bg-light">
+    <div class="card-body">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="q" class="form-control" placeholder="Buscar por RUT o Nombre..." value="{{ query|default:'' }}">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Buscar</button>
+            {% if query %}
+                <a href="{% url 'pacientes:lista_pacientes' %}" class="btn btn-outline-secondary">Limpiar</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha Ingreso</th>
+                        <th>Paciente</th>
+                        <th>RUT</th>
+                        <th>Previsión</th>
+                        <th class="text-center">Alerta</th>
+                        <th class="text-end">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for madre in madres %}
+                    <tr class="{% if madre.alerta_recepcion %}table-danger{% endif %}">
+                        <td class="small text-muted">{{ madre.fecha_ingreso|date:"d/m H:i" }}</td>
+                        <td class="fw-bold">{{ madre.nombre }}</td>
+                        <td>{{ madre.rut }}</td>
+                        <td><span class="badge bg-secondary">{{ madre.get_prevision_display }}</span></td>
+                        
+                        <td class="text-center">
+                            {% if madre.alerta_recepcion %}
+                                <span class="badge bg-danger blinking-badge" title="{{ madre.alerta_recepcion }}">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> ¡ALERTA!
+                                </span>
+                            {% else %}
+                                <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="text-end">
+                            <a href="{% url 'pacientes:ver_ficha' madre.pk %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-eye"></i> Ver Ficha
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">No hay pacientes registradas aún.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Animación suave para llamar la atención */
+    .blinking-badge {
+        animation: blinker 1.5s linear infinite;
+    }
+    @keyframes blinker {
+        50% { opacity: 0.6; }
+    }
+</style>
+{% endblock %}

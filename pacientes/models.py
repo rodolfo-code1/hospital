@@ -2,88 +2,63 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
+
 class Madre(models.Model):
-    """
-    Modelo de Madre (Paciente) - Módulo 1 simplificado
-    Representa a las madres ingresadas al área de obstetricia.
-    """
+    PREVISION_CHOICES = [
+        ('fonasa_a', 'FONASA A'),
+        ('fonasa_b', 'FONASA B'),
+        ('fonasa_c', 'FONASA C'),
+        ('fonasa_d', 'FONASA D'),
+        ('isapre', 'ISAPRE'),
+        ('particular', 'PARTICULAR'),
+        ('otra', 'OTRA'),
+    ]
+
+    rut = models.CharField(max_length=12, unique=True, verbose_name="RUT", help_text="Ej: 12.345.678-9")
+    nombre = models.CharField(max_length=200, verbose_name="Nombre completo")
     
-    rut = models.CharField(
-        max_length=12,
-        unique=True,
-        verbose_name="RUT",
-        help_text="RUT de la madre (ej: 12345678-9)"
-    )
-    nombre = models.CharField(
-        max_length=200,
-        verbose_name="Nombre completo"
-    )
-    edad = models.IntegerField(
-        validators=[MinValueValidator(12), MaxValueValidator(60)],
-        verbose_name="Edad"
-    )
-    direccion = models.CharField(
-        max_length=300,
-        verbose_name="Dirección"
-    )
-    telefono = models.CharField(
-        max_length=15,
-        verbose_name="Teléfono"
-    )
-    email = models.EmailField(
-        blank=True,
-        null=True,
-        verbose_name="Correo electrónico"
-    )
+    # --- DATOS DEMOGRÁFICOS (Planilla URNI) ---
+    fecha_nacimiento = models.DateField(verbose_name="Fecha de Nacimiento", null=True, blank=True)
+    edad = models.IntegerField(validators=[MinValueValidator(10), MaxValueValidator(60)], verbose_name="Edad")
+    nacionalidad = models.CharField(max_length=100, default="Chilena", verbose_name="Nacionalidad")
+    prevision = models.CharField(max_length=20, choices=PREVISION_CHOICES, default='fonasa_b', verbose_name="Previsión")
     
-    # Antecedentes clínicos básicos
-    controles_prenatales = models.IntegerField(
-        default=0,
-        verbose_name="Número de controles prenatales"
-    )
-    embarazos_anteriores = models.IntegerField(
-        default=0,
-        verbose_name="Embarazos anteriores"
-    )
-    patologias = models.TextField(
-        blank=True,
-        verbose_name="Patologías",
-        help_text="Ej: hipertensión, diabetes gestacional"
-    )
+    direccion = models.CharField(max_length=300, verbose_name="Dirección", blank=True)
+    comuna = models.CharField(max_length=100, verbose_name="Comuna", blank=True)
+    cesfam = models.CharField(max_length=150, verbose_name="CESFAM de Origen", blank=True, help_text="Centro de Salud Familiar")
     
-    # Campos de auditoría
-    fecha_ingreso = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name="Fecha de ingreso"
-    )
-    fecha_actualizacion = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Última actualización"
-    )
+    telefono = models.CharField(max_length=15, verbose_name="Teléfono", blank=True)
+    email = models.EmailField(blank=True, null=True, verbose_name="Correo electrónico")
     
+    alerta_recepcion = models.TextField(
+        blank=True, 
+        verbose_name="Alerta de Ingreso", 
+        help_text="Observación crítica al momento de la recepción (Ej: Sangrado, dolor agudo)"
+    )
+
+    # --- ANTECEDENTES OBSTÉTRICOS ---
+    controles_prenatales = models.IntegerField(default=0, verbose_name="N° Controles")
+    embarazos_anteriores = models.IntegerField(default=0, verbose_name="Para (Partos previos)")
+    patologias = models.TextField(blank=True, verbose_name="Diagnósticos / Patologías", help_text="Ej: RNT 38 SEM AEG, HMD")
+    
+    # --- AUDITORÍA ---
+    fecha_ingreso = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='madres_registradas',
+        verbose_name="Registrado por"
+    )
+
     class Meta:
         verbose_name = "Madre"
         verbose_name_plural = "Madres"
         ordering = ['-fecha_ingreso']
     
-    creado_por = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='madres_registradas',
-        verbose_name="Registrado por (Usuario)"
-    )
     def __str__(self):
         return f"{self.nombre} ({self.rut})"
-    
+
     def tiene_registros_completos(self):
-        """Valida si la madre tiene todos los datos básicos necesarios"""
-        return all([
-            self.nombre,
-            self.rut,
-            self.edad,
-            self.direccion,
-            self.telefono,
-            self.controles_prenatales > 0
-        ])
+        return all([self.nombre, self.rut, self.edad, self.comuna])
