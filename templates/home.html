@@ -1,52 +1,74 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/panel_home.css' %}">
+{% endblock %}
+
 {% block title %}Panel Principal - Hospital Herminda Martín{% endblock %}
 
+
 {% block content %}
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm bg-light">
-                <div class="card-body d-flex align-items-center justify-content-between">
-                    <div>
-                        <h2 class="fw-bold text-dark mb-0">
-                            Hola, {{ user.first_name }}
-                        </h2>
-                        <p class="text-muted mb-0">
-                            Rol: <span class="badge bg-dark">{{ user.get_rol_display }}</span>
-                            &nbsp;|&nbsp; <i class="bi bi-calendar-event"></i> Turno de hoy
-                        </p>
-                    </div>
-                    <div class="text-end d-none d-md-block">
-                        <span class="badge bg-success-subtle text-success border border-success p-2">
-                            <i class="bi bi-wifi"></i> Conectado
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4">
-        {% if user.rol == 'matrona' %}
-            {% include 'componentes/panel/matrona.html' %}
-        {% endif %}
-
-        {% if user.rol == 'medico' %}
-            {% include 'componentes/panel/medico.html' %}
-        {% endif %}
-
-        {% if user.rol == 'administrativo' %}
-            {% include 'componentes/panel/administrativo.html' %}
-        {% endif %}
-
-        {% if user.rol == 'supervisor' %}
-            {% include 'componentes/panel/supervisor.html' %}
-        {% endif %}
-
-        {% if user.rol == 'encargado_ti' %}
-            {% include 'componentes/panel/ti.html' %}
-        {% endif %}
-    </div>
+<div class="panel-home">
+  <div class="container py-4">
+      <div class="row mb-4">
+          <div class="col-12">
+              <div class="card border-0 shadow-sm bg-light mb-4 card-bienvenida">
+                  <div class="card-body d-flex align-items-center justify-content-between">
+                      <div>
+                          <h2 class="fw-bold text-dark mb-2">
+                              Hola, {{ user.first_name }}
+                          </h2>
+                          <p class="text-muted mb-0">
+                              Rol: 
+                              {% if user.rol == 'matrona' %}
+                                  <span class="badge badge-matrona">{{ user.get_rol_display }}</span>
+                              {% elif user.rol == 'medico' %}
+                                  <span class="badge badge-medico">{{ user.get_rol_display }}</span>
+                              {% elif user.rol == 'encargado_ti' %}
+                                  <span class="badge badge-ti">{{ user.get_rol_display }}</span>
+                              {% elif user.rol == 'supervisor' %}
+                                  <span class="badge badge-supervisor">{{ user.get_rol_display }}</span>
+                              {% elif user.rol == 'administrador' %}
+                                  <span class="badge badge-administrador">{{ user.get_rol_display }}</span>
+                              {% else %}
+                                  <span class="badge bg-light text-dark">{{ user.get_rol_display }}</span>
+                              {% endif %}
+                              &nbsp;|&nbsp; <i class="bi bi-calendar-event"></i> {% now "d/m/Y" %}
+                          </p>
+                      </div>
+                      <div class="text-end d-none d-md-block">
+                          <span class="badge bg-success-subtle text-success border border-success p-2">
+                              <i class="bi bi-wifi"></i> Conectado
+                          </span>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  
+      <div class="row g-4">
+          {% if user.rol == 'matrona' %}
+              {% include 'componentes/panel/matrona.html' %}
+          {% endif %}
+  
+          {% if user.rol == 'medico' %}
+              {% include 'componentes/panel/medico.html' %}
+          {% endif %}
+  
+          {% if user.rol == 'administrativo' %}
+              {% include 'componentes/panel/administrativo.html' %}
+          {% endif %}
+  
+          {% if user.rol == 'supervisor' %}
+              {% include 'componentes/panel/supervisor.html' %}
+          {% endif %}
+  
+          {% if user.rol == 'encargado_ti' %}
+              {% include 'componentes/panel/ti.html' %}
+          {% endif %}
+      </div>
+  </div>
 </div>
 {% endblock %}
