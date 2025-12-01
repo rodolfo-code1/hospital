@@ -1,48 +1,66 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ titulo }} - Gestión TI{% endblock %}
 
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow">
-            <div class="card-header bg-dark text-white">
-                <h4 class="mb-0"><i class="bi bi-person-gear"></i> {{ titulo }}</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    {% for field in form %}
-                    <div class="mb-3">
-                        {% if field.field.widget.input_type == 'checkbox' %}
-                            <div class="form-check form-switch">
-                                {{ field }}
-                                <label class="form-check-label fw-bold" for="{{ field.id_for_label }}">
-                                    {{ field.label }}
-                                </label>
-                            </div>
-                        {% else %}
-                            <label class="form-label fw-bold">{{ field.label }}</label>
-                            {{ field }}
-                        {% endif %}
-                        
-                        {% if field.errors %}
-                            <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
-                        {% endif %}
-                        {% if field.help_text %}
-                            <div class="form-text">{{ field.help_text }}</div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/gestion_usuarios.css' %}">
+{% endblock %}
 
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                        <a href="{% url 'usuarios:gestion_usuarios' %}" class="btn btn-secondary">Cancelar</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save"></i> {{ btn_texto }}
-                        </button>
-                    </div>
-                </form>
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow usuario-card">
+                <div class="card-header usuario-header text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-person-gear"></i> {{ titulo }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                {% if field.field.widget.input_type == 'checkbox' %}
+                                    <div class="form-check form-switch">
+                                        {{ field }}
+                                        <label class="form-check-label fw-semibold">
+                                            {{ field.label }}
+                                        </label>
+                                    </div>
+                                {% else %}
+                                    <label class="form-label fw-semibold">
+                                        {{ field.label }}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.name == "password1" %}
+                                        <div class="password-rules mt-2">
+                                            <ul>
+                                                <li>Su contraseña no puede asemejarse tanto a su otra información personal.</li>
+                                                <li>Su contraseña debe contener al menos 8 caracteres.</li>
+                                                <li>Su contraseña no puede ser una clave utilizada comúnmente.</li>
+                                                <li>Su contraseña no puede ser completamente numérica.</li>
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'usuarios:gestion_usuarios' %}"
+                               class="btn btn-secondary px-4">
+                                <i class="bi bi-arrow-left"></i> Volver
+                            </a>
+                            <button type="submit" class="btn btn-guardar px-4">
+                                <i class="bi bi-save"></i> {{ btn_texto }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
