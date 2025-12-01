@@ -6,37 +6,73 @@
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
         <h2><i class="bi bi-clipboard-check"></i> Gestión de Altas</h2>
-        <p class="text-muted">Validación y cierre de procesos de egreso.</p>
+        <p class="text-muted mb-0">Monitoreo y cierre de procesos de egreso.</p>
     </div>
     <div class="col-md-4 text-end">
-        <a href="{% url 'app:home' %}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Volver
+        <a href="{% url 'app:home' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-house"></i> Volver al Panel
         </a>
     </div>
 </div>
 
-<div class="row mb-4 g-3">
-    <div class="col-md-4">
-        <div class="card bg-primary text-white h-100">
+<div class="row g-3 mb-4">
+    
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-primary text-white h-100">
             <div class="card-body d-flex justify-content-between align-items-center">
-                <div><h6 class="mb-0">En Proceso</h6><small>Total Activas</small></div>
-                <h2 class="mb-0">{{ total_altas }}</h2>
+                <div>
+                    <h6 class="mb-0 text-white-50">Total Activas</h6>
+                    <h2 class="mb-0 fw-bold">{{ stats.en_proceso }}</h2>
+                </div>
+                <i class="bi bi-folder2-open fs-1 text-white-50"></i>
+            </div>
+            <div class="card-footer bg-white bg-opacity-10 border-0 py-1 small">
+                Procesos abiertos
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card bg-warning text-dark h-100">
+
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-warning text-dark h-100">
             <div class="card-body d-flex justify-content-between align-items-center">
-                <div><h6 class="mb-0">Pendientes</h6><small>Acción Requerida</small></div>
-                <h2 class="mb-0">{{ pendientes }}</h2>
+                <div>
+                    <h6 class="mb-0 text-secondary">Falta Médico</h6>
+                    <h2 class="mb-0 fw-bold">{{ stats.firma_medica }}</h2>
+                </div>
+                <i class="bi bi-person-lines-fill fs-1 text-secondary opacity-50"></i>
+            </div>
+            <div class="card-footer bg-white bg-opacity-25 border-0 py-1 small text-muted">
+                Esperando firma clínica
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card bg-success text-white h-100">
+
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-info text-white h-100">
             <div class="card-body d-flex justify-content-between align-items-center">
-                <div><h6 class="mb-0">Completadas</h6><small>Históricas</small></div>
-                <h2 class="mb-0">{{ completadas }}</h2>
+                <div>
+                    <h6 class="mb-0 text-white-50">Falta Admin</h6>
+                    <h2 class="mb-0 fw-bold">{{ stats.cierre_admin }}</h2>
+                </div>
+                <i class="bi bi-building-exclamation fs-1 text-white-50"></i>
+            </div>
+            <div class="card-footer bg-white bg-opacity-10 border-0 py-1 small">
+                Listas para cierre final
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm bg-success text-white h-100">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-0 text-white-50">Completadas</h6>
+                    <h2 class="mb-0 fw-bold">{{ stats.completadas }}</h2>
+                </div>
+                <i class="bi bi-check-circle-fill fs-1 text-white-50"></i>
+            </div>
+            <div class="card-footer bg-white bg-opacity-10 border-0 py-1 small">
+                Histórico cerrado
             </div>
         </div>
     </div>
@@ -63,16 +99,15 @@
     </div>
 </div>
 
-<div class="card shadow">
+<div class="card shadow border-0">
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th>Folio</th>
-                        <th>Tipo Alta</th>
                         <th>Pacientes</th>
-                        <th>Estado</th>
+                        <th>Estado Actual</th>
                         <th>Progreso</th>
                         <th class="text-end">Acciones</th>
                     </tr>
@@ -81,46 +116,36 @@
                     {% for alta in altas %}
                     <tr>
                         <td class="fw-bold text-secondary">#{{ alta.id }}</td>
-                        
-                        <td>
-                            {% if alta.madre and alta.recien_nacido %}
-                                <span class="badge bg-info text-dark"><i class="bi bi-people-fill"></i> Conjunta</span>
-                            {% elif alta.madre %}
-                                <span class="badge bg-primary"><i class="bi bi-person-standing-dress"></i> Solo Madre</span>
-                            {% elif alta.recien_nacido %}
-                                <span class="badge bg-warning text-dark"><i class="bi bi-emoji-smile"></i> Solo RN</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Vacía</span>
-                            {% endif %}
-                        </td>
 
                         <td>
-                            {% if alta.madre %}
-                                <div class="small"><strong>M:</strong> {{ alta.madre.nombre }}</div>
-                            {% endif %}
-                            {% if alta.recien_nacido %}
-                                <div class="small"><strong>RN:</strong> {{ alta.recien_nacido.codigo_unico }}</div>
-                            {% endif %}
+                            <div class="d-flex flex-column">
+                                {% if alta.madre %}
+                                    <div class="small"><i class="bi bi-person-standing-dress text-primary"></i> {{ alta.madre.nombre }}</div>
+                                {% endif %}
+                                {% if alta.recien_nacido %}
+                                    <div class="small"><i class="bi bi-emoji-smile text-success"></i> {{ alta.recien_nacido.codigo_unico }}</div>
+                                {% endif %}
+                            </div>
                         </td>
 
                         <td>
                             {% if alta.estado == 'completada' %}
                                 <span class="badge bg-success"><i class="bi bi-check-all"></i> Completada</span>
-                            {% elif alta.estado == 'pendiente' %}
-                                <span class="badge bg-secondary">Pendiente</span>
-                            {% elif alta.estado == 'validada' %}
-                                <span class="badge bg-info text-dark">Validada</span>
                             {% elif alta.estado == 'alta_clinica' %}
-                                <span class="badge bg-primary">Firma Médica OK</span>
+                                <span class="badge bg-info text-dark">Firma Médica OK</span>
+                            {% elif alta.estado == 'validada' %}
+                                <span class="badge bg-warning text-dark">Esperando Médico</span>
                             {% else %}
                                 <span class="badge bg-light text-dark border">{{ alta.get_estado_display }}</span>
                             {% endif %}
                         </td>
 
                         <td>
-                            <div class="d-flex gap-1">
-                                <i class="bi bi-circle-fill {% if alta.registros_completos %}text-success{% else %}text-muted opacity-25{% endif %}" title="Registros"></i>
+                            <div class="d-flex gap-2 align-items-center">
+                                <i class="bi bi-circle-fill {% if alta.registros_completos %}text-success{% else %}text-muted opacity-25{% endif %}" title="Datos"></i>
+                                <i class="bi bi-arrow-right-short text-muted"></i>
                                 <i class="bi bi-circle-fill {% if alta.alta_clinica_confirmada %}text-success{% else %}text-muted opacity-25{% endif %}" title="Médico"></i>
+                                <i class="bi bi-arrow-right-short text-muted"></i>
                                 <i class="bi bi-circle-fill {% if alta.alta_administrativa_confirmada %}text-success{% else %}text-muted opacity-25{% endif %}" title="Admin"></i>
                             </div>
                         </td>
@@ -138,15 +163,17 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
-                            <i class="bi bi-inbox display-4 d-block mb-3"></i>
-                            No hay procesos de alta activos con estos filtros.
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            No hay procesos de alta con estos filtros.
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+    </div>
+    <div class="card-footer bg-white border-0 py-3">
+        <small class="text-muted">Mostrando últimos registros.</small>
     </div>
 </div>
 {% endblock %}

@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Alertas Clínicas - Hospital{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="text-danger mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Alertas Clínicas</h2>
+        <p class="text-muted mb-0">Pacientes con criterios de riesgo que requieren supervisión.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'app:home' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Panel
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-4">
+        <div class="card border-danger shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Recién Nacidos en Riesgo</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>RN ID</th>
+                                <th>Madre</th>
+                                <th>Criterio Alerta</th>
+                                <th>Peso</th>
+                                <th>APGAR (1'/5')</th>
+                                <th>Estado Actual</th>
+                                <th class="text-end">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rn in rn_criticos %}
+                            <tr>
+                                <td class="fw-bold">{{ rn.codigo_unico }}</td>
+                                <td>{{ rn.parto.madre.nombre }}</td>
+                                <td>
+                                    {% if rn.apgar_1_min < 7 or rn.apgar_5_min < 7 %}
+                                        <span class="badge bg-danger">Depresión (APGAR)</span>
+                                    {% endif %}
+                                    {% if rn.peso < 2.5 %}
+                                        <span class="badge bg-warning text-dark">Bajo Peso</span>
+                                    {% elif rn.peso > 4.0 %}
+                                        <span class="badge bg-warning text-dark">Macrosomía</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ rn.peso }} kg</td>
+                                <td>{{ rn.apgar_1_min }} / {{ rn.apgar_5_min }}</td>
+                                <td>
+                                    {% if rn.estado_salud == 'critico' %}
+                                        <span class="badge bg-danger">Crítico / UCI</span>
+                                    {% elif rn.estado_salud == 'observacion' %}
+                                        <span class="badge bg-warning text-dark">Observación</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Sano</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'altas:panel_medico' %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-arrow-right-short"></i> Ir a Sala
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="7" class="text-center text-muted py-3">No hay alertas neonatales recientes.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card border-warning shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-activity"></i> Complicaciones en Parto</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Madre</th>
+                                <th>RUT</th>
+                                <th>Tipo Parto</th>
+                                <th>Descripción Complicación</th>
+                                <th class="text-end">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for parto in partos_complicados %}
+                            <tr>
+                                <td>{{ parto.fecha_hora_inicio|date:"d/m H:i" }}</td>
+                                <td class="fw-bold">{{ parto.madre.nombre }}</td>
+                                <td>{{ parto.madre.rut }}</td>
+                                <td>{{ parto.get_tipo_display }}</td>
+                                <td class="text-danger fst-italic">{{ parto.complicaciones }}</td>
+                                <td class="text-end">
+                                    <a href="{% url 'altas:panel_medico' %}" class="btn btn-sm btn-outline-dark">
+                                        <i class="bi bi-arrow-right-short"></i> Ir a Sala
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="text-center text-muted py-3">No hay partos con complicaciones recientes.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

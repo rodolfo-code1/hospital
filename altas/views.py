@@ -105,21 +105,54 @@ def crear_alta(request):
     return render(request, 'altas/crear_alta.html', context)
 @login_required
 def lista_altas(request):
-    altas = Alta.objects.all().select_related('madre', 'recien_nacido')
+    """
+    Lista general de altas con estadísticas detalladas.
+    """
+    # Consulta base
+    altas = Alta.objects.all().select_related('madre', 'recien_nacido').order_by('-fecha_creacion')
     form_buscar = BuscarAltaForm(request.GET or None)
     
+    # Aplicar filtros del buscador
     if form_buscar.is_valid():
         buscar = form_buscar.cleaned_data.get('buscar')
         estado = form_buscar.cleaned_data.get('estado')
+        fecha_desde = form_buscar.cleaned_data.get('fecha_desde')
+        fecha_hasta = form_buscar.cleaned_data.get('fecha_hasta')
+        
         if buscar:
-            altas = altas.filter(Q(madre__nombre__icontains=buscar) | Q(madre__rut__icontains=buscar))
+            altas = altas.filter(
+                Q(madre__nombre__icontains=buscar) | 
+                Q(madre__rut__icontains=buscar) |
+                Q(recien_nacido__codigo_unico__icontains=buscar)
+            )
         if estado:
             altas = altas.filter(estado=estado)
+        if fecha_desde:
+            altas = altas.filter(fecha_creacion__gte=fecha_desde)
+        if fecha_hasta:
+            altas = altas.filter(fecha_creacion__lte=fecha_hasta)
+    
+    # --- ESTADÍSTICAS GLOBALES (Sin filtros de búsqueda para ver el panorama real) ---
+    qs_global = Alta.objects.all()
+    
+    stats = {
+        # 1. En Proceso: Todo lo que no está cerrado
+        'en_proceso': qs_global.exclude(estado='completada').count(),
+        
+        # 2. Esperando Médico: Registros OK pero sin firma
+        'firma_medica': qs_global.filter(registros_completos=True, alta_clinica_confirmada=False).count(),
+        
+        # 3. Esperando Admin: Ya tiene firma médica, falta cierre
+        'cierre_admin': qs_global.filter(alta_clinica_confirmada=True, alta_administrativa_confirmada=False).count(),
+        
+        # 4. Completadas
+        'completadas': qs_global.filter(estado='completada').count()
+    }
     
     context = {
-        'altas': altas, 'form_buscar': form_buscar,
-        'pendientes': altas.filter(estado='pendiente').count(),
-        'completadas': altas.filter(estado='completada').count(),
+        'altas': altas,
+        'form_buscar': form_buscar,
+        'stats': stats  # Enviamos las nuevas estadísticas
     }
     return render(request, 'altas/lista_altas.html', context)
 
@@ -143,44 +176,107 @@ def detalle_alta(request, pk):
 @medico_requerido
 def confirmar_alta_clinica(request, pk):
     alta = get_object_or_404(Alta, pk=pk)
+    
+    if not alta.puede_confirmar_alta_clinica():
+        messages.error(request, 'No se puede confirmar. Verifique registros.')
+        return redirect('altas:detalle_alta', pk=pk)
+    
+    # Obtenemos el nombre completo del usuario logueado
+    nombre_medico_actual = request.user.get_full_name() or request.user.username
+    
     if request.method == 'POST':
         form = ConfirmarAltaClinicaForm(request.POST)
         if form.is_valid():
-            alta.confirmar_alta_clinica(form.cleaned_data['medico_nombre'])
+            # Aunque el form traiga el dato, por seguridad forzamos el usuario actual
+            alta.confirmar_alta_clinica(nombre_medico_actual)
+            
             if form.cleaned_data.get('observaciones_clinicas'):
-                alta.observaciones += f"\n[Médico]: {form.cleaned_data['observaciones_clinicas']}"
+                alta.observaciones += f"\n[Alta Clínica - {nombre_medico_actual}]: {form.cleaned_data['observaciones_clinicas']}"
                 alta.save()
-            messages.success(request, 'Alta clínica confirmada.')
+                
+            messages.success(request, f'Alta clínica firmada exitosamente por {nombre_medico_actual}.')
             return redirect('altas:detalle_alta', pk=pk)
     else:
-        form = ConfirmarAltaClinicaForm()
-    return render(request, 'altas/confirmar_alta.html', {'alta': alta, 'form': form, 'tipo_confirmacion': 'clínica'})
-
+        # AQUÍ ESTÁ LA MEJORA: Pre-llenamos el formulario con el nombre
+        form = ConfirmarAltaClinicaForm(initial={'medico_nombre': nombre_medico_actual})
+    
+    return render(request, 'altas/confirmar_alta.html', {
+        'alta': alta, 
+        'form': form, 
+        'tipo_confirmacion': 'clínica'
+    })
 @login_required
 @rol_requerido('administrativo')
 def confirmar_alta_administrativa(request, pk):
+    """
+    Vista para confirmar el alta administrativa.
+    Toma el nombre del usuario logueado automáticamente.
+    """
     alta = get_object_or_404(Alta, pk=pk)
+    
+    if not alta.puede_confirmar_alta_administrativa():
+        messages.error(request, 'No se puede confirmar. Falta alta clínica.')
+        return redirect('altas:detalle_alta', pk=pk)
+    
+    # Obtener nombre del administrativo actual
+    nombre_admin_actual = request.user.get_full_name() or request.user.username
+
     if request.method == 'POST':
         form = ConfirmarAltaAdministrativaForm(request.POST)
         if form.is_valid():
-            alta.confirmar_alta_administrativa(form.cleaned_data['administrativo_nombre'])
+            # Usamos el nombre del usuario logueado por seguridad
+            alta.confirmar_alta_administrativa(nombre_admin_actual)
+            
             if form.cleaned_data.get('observaciones_administrativas'):
-                alta.observaciones += f"\n[Admin]: {form.cleaned_data['observaciones_administrativas']}"
+                alta.observaciones += f"\n[Admin {nombre_admin_actual}]: {form.cleaned_data['observaciones_administrativas']}"
                 alta.save()
+            
             try:
                 generar_certificado_pdf(alta)
                 messages.info(request, 'Proceso completado y certificado generado.')
             except: pass
+                
             return redirect('altas:detalle_alta', pk=pk)
     else:
-        form = ConfirmarAltaAdministrativaForm()
-    return render(request, 'altas/confirmar_alta.html', {'alta': alta, 'form': form, 'tipo_confirmacion': 'administrativa'})
-
+        # Pre-llenamos el campo con el nombre
+        form = ConfirmarAltaAdministrativaForm(initial={'administrativo_nombre': nombre_admin_actual})
+    
+    return render(request, 'altas/confirmar_alta.html', {
+        'alta': alta, 
+        'form': form, 
+        'tipo_confirmacion': 'administrativa'
+    })
 @login_required
 def historial_altas(request):
-    altas = Alta.objects.filter(estado='completada').order_by('-fecha_alta')
-    return render(request, 'altas/historial_altas.html', {'altas': altas, 'total': altas.count()})
-
+    """
+    Vista del historial completo de altas completadas con estadísticas.
+    """
+    # Obtener todas las altas completadas
+    altas = Alta.objects.filter(estado='completada').select_related(
+        'madre', 'parto', 'recien_nacido'
+    ).order_by('-fecha_alta')
+    
+    # Calcular Estadísticas (Cantidades)
+    total = altas.count()
+    
+    # Para filtrar por tipo usamos la lógica de nulos
+    conjuntas = altas.filter(madre__isnull=False, recien_nacido__isnull=False).count()
+    solo_madre = altas.filter(madre__isnull=False, recien_nacido__isnull=True).count()
+    solo_rn = altas.filter(madre__isnull=True, recien_nacido__isnull=False).count()
+    
+    stats = {
+        'total': total,
+        'conjuntas': conjuntas,
+        'solo_madre': solo_madre,
+        'solo_rn': solo_rn
+    }
+    
+    context = {
+        'altas': altas,
+        'stats': stats  # Enviamos los datos nuevos
+    }
+    
+    return render(request, 'altas/historial_altas.html', context)
 @login_required
 def exportar_excel(request):
     return exportar_altas_excel(Alta.objects.all())

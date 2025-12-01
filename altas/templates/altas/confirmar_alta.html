@@ -1,91 +1,127 @@
 {% extends 'base.html' %}
 
-{% block title %}Confirmar Alta {{ tipo_confirmacion|title }} - Sistema Trazabilidad{% endblock %}
+{% block title %}Confirmar Alta {{ tipo_confirmacion|title }}{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-8 mx-auto">
-        <div class="card">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0">
-                    <i class="bi bi-check-circle"></i> Confirmar Alta {{ tipo_confirmacion|title }}
-                </h4>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        
+        <div class="card shadow-lg border-0">
+            
+            <div class="card-header {% if tipo_confirmacion == 'clínica' %}bg-success{% else %}bg-primary{% endif %} text-white py-3">
+                <div class="d-flex align-items-center">
+                    <i class="bi {% if tipo_confirmacion == 'clínica' %}bi-stethoscope{% else %}bi-building-check{% endif %} fs-3 me-3"></i>
+                    <div>
+                        <h4 class="mb-0">Confirmación de Alta {{ tipo_confirmacion|title }}</h4>
+                        <small class="opacity-75">Folio #{{ alta.id }}</small>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <!-- Resumen del alta -->
-                <div class="alert alert-info">
-                    <h5><i class="bi bi-info-circle"></i> Información del Alta</h5>
-                    <table class="table table-sm table-borderless mb-0">
-                        <tr>
-                            <th width="30%">Alta #:</th>
-                            <td>{{ alta.id }}</td>
-                        </tr>
-                        <tr>
-                            <th>Madre:</th>
-                            <td>{{ alta.madre.nombre }} ({{ alta.madre.rut }})</td>
-                        </tr>
-                        <tr>
-                            <th>Recién Nacido:</th>
-                            <td>{{ alta.recien_nacido.codigo_unico }}</td>
-                        </tr>
-                        <tr>
-                            <th>Tipo de Parto:</th>
-                            <td>{{ alta.parto.get_tipo_display }}</td>
-                        </tr>
-                    </table>
+
+            <div class="card-body p-4 bg-light bg-opacity-25">
+
+                <h6 class="text-muted fw-bold text-uppercase mb-3">Pacientes a Egresar</h6>
+                <div class="row g-3 mb-4">
+                    
+                    {% if alta.madre %}
+                    <div class="col-md-6">
+                        <div class="card h-100 border-primary border-start border-4 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="text-primary me-2"><i class="bi bi-person-standing-dress fs-4"></i></div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0">{{ alta.madre.nombre }}</h6>
+                                        <small class="text-muted">{{ alta.madre.rut }}</small>
+                                    </div>
+                                </div>
+                                <ul class="list-unstyled small text-muted mb-0 ms-4">
+                                    <li><strong>Edad:</strong> {{ alta.madre.edad }} años</li>
+                                    <li><strong>Previsión:</strong> {{ alta.madre.get_prevision_display }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if alta.recien_nacido %}
+                    <div class="col-md-6">
+                        <div class="card h-100 border-success border-start border-4 shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="text-success me-2"><i class="bi bi-emoji-smile fs-4"></i></div>
+                                    <div>
+                                        <h6 class="fw-bold mb-0">{{ alta.recien_nacido.codigo_unico }}</h6>
+                                        <small class="text-muted">Recién Nacido</small>
+                                    </div>
+                                </div>
+                                <ul class="list-unstyled small text-muted mb-0 ms-4">
+                                    <li><strong>Peso:</strong> {{ alta.recien_nacido.peso }} kg</li>
+                                    <li><strong>Sexo:</strong> {{ alta.recien_nacido.get_sexo_display }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
 
-                <!-- Formulario de confirmación -->
+                <hr class="my-4">
+
                 <form method="post">
                     {% csrf_token %}
                     
                     <div class="mb-4">
-                        {% for field in form %}
-                            <div class="mb-3">
-                                {% if field.field.widget.input_type == 'checkbox' %}
-                                    <div class="form-check">
-                                        {{ field }}
-                                        <label class="form-check-label" for="{{ field.id_for_label }}">
-                                            {{ field.label }}
-                                        </label>
-                                    </div>
+                        {% if tipo_confirmacion == 'clínica' %}
+                            <label class="form-label fw-bold text-success">Médico Responsable</label>
+                            {{ form.medico_nombre }}
+                        {% else %}
+                            <label class="form-label fw-bold text-primary">Administrativo Responsable</label>
+                            {{ form.administrativo_nombre }}
+                        {% endif %}
+                        <div class="form-text text-muted">
+                            <i class="bi bi-shield-check"></i> Usuario verificado por el sistema.
+                        </div>
+                    </div>
+
+                    <div class="card bg-white border mb-4">
+                        <div class="card-body">
+                            <div class="form-check d-flex align-items-center">
+                                {% if tipo_confirmacion == 'clínica' %}
+                                    {{ form.confirmar_alta_clinica }}
+                                    <label class="form-check-label ms-2 fw-bold text-dark" for="{{ form.confirmar_alta_clinica.id_for_label }}">
+                                        Certifico que los pacientes cumplen con los criterios clínicos para el egreso hospitalario.
+                                    </label>
                                 {% else %}
-                                    {{ field.label_tag }}
-                                    {{ field }}
-                                    {% if field.help_text %}
-                                        <small class="form-text text-muted">{{ field.help_text }}</small>
-                                    {% endif %}
-                                {% endif %}
-                                
-                                {% if field.errors %}
-                                    <div class="text-danger">
-                                        {{ field.errors }}
-                                    </div>
+                                    {{ form.confirmar_alta_administrativa }}
+                                    <label class="form-check-label ms-2 fw-bold text-dark" for="{{ form.confirmar_alta_administrativa.id_for_label }}">
+                                        Confirmo que el trámite administrativo y documentos están completos.
+                                    </label>
                                 {% endif %}
                             </div>
-                        {% endfor %}
-                    </div>
-
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            {{ form.non_field_errors }}
+                            <div class="text-danger small mt-2 ms-4">
+                                {{ form.confirmar_alta_clinica.errors }}
+                                {{ form.confirmar_alta_administrativa.errors }}
+                            </div>
                         </div>
-                    {% endif %}
-
-                    <div class="alert alert-warning">
-                        <i class="bi bi-exclamation-triangle"></i> 
-                        <strong>Importante:</strong> Al confirmar esta alta {{ tipo_confirmacion }}, 
-                        se registrará su nombre y fecha de confirmación de forma permanente en el sistema.
                     </div>
 
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'altas:detalle_alta' alta.pk %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Observaciones Finales (Opcional)</label>
+                        {% if tipo_confirmacion == 'clínica' %}
+                            {{ form.observaciones_clinicas }}
+                        {% else %}
+                            {{ form.observaciones_administrativas }}
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'altas:detalle_alta' alta.pk %}" class="btn btn-light border btn-lg px-4">
+                            Cancelar
                         </a>
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-circle"></i> Confirmar Alta {{ tipo_confirmacion|title }}
+                        <button type="submit" class="btn {% if tipo_confirmacion == 'clínica' %}btn-success{% else %}btn-primary{% endif %} btn-lg px-5 shadow-sm">
+                            <i class="bi bi-pen-fill me-2"></i> Firmar Alta
                         </button>
                     </div>
+
                 </form>
             </div>
         </div>
