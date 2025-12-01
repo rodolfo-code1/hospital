@@ -29,26 +29,27 @@ def registro_view(request):
     return render(request, 'usuarios/registro.html', {'form': form})
 
 def login_view(request):
-    """Vista de inicio de sesión"""
+    """Vista de inicio de sesión robusta"""
     if request.user.is_authenticated:
-        return redirect('app:home')  # <--- CAMBIO AQUÍ
+        return redirect('app:home')
     
     if request.method == 'POST':
-        username = request.POST.get('username')
+        raw_username = request.POST.get('username', '')
         password = request.POST.get('password')
         
-        user = authenticate(request, username=username, password=password)
+        # Limpieza del RUT: eliminar puntos y guiones
+        username_limpio = raw_username.replace('.', '').replace('-', '')
+        
+        
+        user = authenticate(request, username=username_limpio, password=password)
         
         if user is not None:
             login(request, user)
-            messages.success(request, f'Bienvenido {user.get_full_name()} ({user.get_rol_display()})')
-            
-            # CAMBIO IMPORTANTE AQUÍ ABAJO:
-            # Redirigir al 'next' si existe, si no al dashboard 'altas:home'
-            next_url = request.GET.get('next', 'app:home') 
+            messages.success(request, f'Bienvenido {user.get_full_name()}')
+            next_url = request.GET.get('next', 'app:home')
             return redirect(next_url)
         else:
-            messages.error(request, 'Usuario o contraseña incorrectos')
+            messages.error(request, 'RUT o contraseña incorrectos.')
     
     return render(request, 'usuarios/login.html')
 

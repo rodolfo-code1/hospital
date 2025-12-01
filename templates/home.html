@@ -28,6 +28,34 @@
     </div>
 
     <div class="row g-4">
+        
+        {% if cant_notificaciones > 0 %}
+        <div class="col-12">
+            <div class="card border-warning mb-3 shadow">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-bell-fill"></i> Tienes {{ cant_notificaciones }} notificaciones nuevas</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for noti in notificaciones %}
+                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start {% if noti.tipo == 'urgente' %}bg-danger-subtle{% endif %}">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">
+                                {% if noti.tipo == 'urgente' %}<i class="bi bi-exclamation-octagon-fill text-danger"></i>{% endif %}
+                                {{ noti.titulo }}
+                            </div>
+                            {{ noti.mensaje|linebreaksbr }}
+                            <div class="small text-muted mt-1">{{ noti.fecha_creacion|timesince }} atrás</div>
+                        </div>
+                        <a href="{% url 'app:marcar_leida' noti.pk %}" class="btn btn-sm btn-outline-dark">
+                            {% if noti.link %}Revisar{% else %}Ocultar{% endif %}
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         {% if user.rol == 'matrona' %}
             {% include 'componentes/panel/matrona.html' %}
         {% endif %}
@@ -49,16 +77,6 @@
         {% endif %}
 
         {% if user.rol == 'recepcionista' %}
-            {% include 'componentes/panel/recepcionista.html' %}
-        {% endif %}
-        
-        {% if user.rol == 'jefatura' %}
-            {% include 'componentes/panel/matrona.html' %}
-            <hr>
-            {% include 'componentes/panel/medico.html' %}
-            <hr>
-            {% include 'componentes/panel/administrativo.html' %}
-            <hr>
             {% include 'componentes/panel/recepcionista.html' %}
         {% endif %}
 

@@ -60,7 +60,7 @@ class Parto(models.Model):
         ordering = ['-fecha_hora_inicio']
     
     def __str__(self):
-        return f"Parto {self.get_tipo_display()} - {self.madre.nombre}"
+        return f"Parto {self.get_tipo_display()} - {self.madre.nombre} ({self.madre.rut})"
 
     def tiene_registros_completos(self):
         return all([self.tipo, self.fecha_hora_termino, self.medico_responsable])
