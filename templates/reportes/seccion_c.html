@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Sección C - Métodos Anticonceptivos al Alta{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Sección C: Métodos Anticonceptivos al Alta
+                    </h2>
+                    <p class="text-muted mb-0">Cobertura de anticoncepción en el egreso de madres</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Filtros</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Principales -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">Total de Altas Madre</h6>
+                    <h2 class="mb-0">{{ total_altas_madre }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">Con Anticonceptivo</h6>
+                    <h2 class="mb-0">{{ altas_con_anticonceptivo }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">Cobertura</h6>
+                    <h2 class="mb-0">{{ porcentaje_cobertura }}%</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métodos Entregados -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Distribución de Métodos Entregados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Método Anticonceptivo</th>
+                                    <th class="text-end">Cantidad</th>
+                                    <th class="text-end">Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for metodo in metodos_entregados %}
+                                <tr>
+                                    <td>{{ metodo.metodo_anticonceptivo }}</td>
+                                    <td class="text-end">{{ metodo.count }}</td>
+                                    <td class="text-end">{{ metodo.porcentaje }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted">No hay métodos registrados</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado de Altas Recientes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Últimas Altas Registradas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Madre</th>
+                                    <th>¿Anticonceptivo?</th>
+                                    <th>Método</th>
+                                    <th>Fecha Alta</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for alta in altas %}
+                                <tr>
+                                    <td>{{ alta.madre.nombre }}</td>
+                                    <td>
+                                        {% if alta.se_entrego_anticonceptivo %}
+                                            <span class="badge bg-success">Sí</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if alta.se_entrego_anticonceptivo %}
+                                            {{ alta.get_metodo_anticonceptivo_display }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ alta.fecha_alta|date:"d/m/Y"|default:"-" }}</td>
+                                    <td><span class="badge bg-secondary">{{ alta.get_estado_display }}</span></td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No hay altas registradas para el período</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón volver -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{% url 'app:home' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

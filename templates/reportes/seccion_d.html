@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+
+{% block title %}Sección D - Información de Recién Nacidos{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Sección D: Información de Recién Nacidos
+                    </h2>
+                    <p class="text-muted mb-0">Indicadores de salud y atención inmediata a recién nacidos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Filtros</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">Total RN</h6>
+                    <h2 class="mb-0">{{ total_rn }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">Masculino</h6>
+                    <h2 class="mb-0">{{ rn_masculino }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">Femenino</h6>
+                    <h2 class="mb-0">{{ rn_femenino }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">Peso Promedio</h6>
+                    <h2 class="mb-0">{{ peso_promedio }} kg</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores Clínicos -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">APGAR Bajo (&lt;7)</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="mb-0 text-danger">{{ rn_apgar_bajo }}</h3>
+                    <small class="text-muted">{{ porcentaje_apgar_bajo }}% del total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Bajo Peso (&lt;2.5 kg)</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="mb-0 text-warning">{{ rn_bajo_peso }}</h3>
+                    <small class="text-muted">{{ porcentaje_bajo_peso }}% del total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Macrosomía (&gt;4.0 kg)</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="mb-0 text-danger">{{ rn_macrosomia }}</h3>
+                    <small class="text-muted">{{ porcentaje_macrosomia }}% del total</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Atención Inmediata -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-cup-straw"></i> Lactancia Precoz (&lt;1 hr)</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="mb-0 text-success">{{ lactancia_precoz }}</h3>
+                    <small class="text-muted">{{ porcentaje_lactancia }}% del total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-heart-fill"></i> Apego Piel a Piel</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="mb-0 text-success">{{ apego_piel_a_piel }}</h3>
+                    <small class="text-muted">{{ porcentaje_apego }}% del total</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listado de RN Recientes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Últimos Recién Nacidos Registrados</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Sexo</th>
+                                    <th>Peso (kg)</th>
+                                    <th>APGAR 1'</th>
+                                    <th>APGAR 5'</th>
+                                    <th>Lactancia</th>
+                                    <th>Apego</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rn in rn %}
+                                <tr>
+                                    <td><strong>{{ rn.codigo_unico }}</strong></td>
+                                    <td>{{ rn.get_sexo_display }}</td>
+                                    <td>{{ rn.peso }}</td>
+                                    <td>
+                                        {% if rn.apgar_1_min < 7 %}
+                                            <span class="badge bg-danger">{{ rn.apgar_1_min }}</span>
+                                        {% else %}
+                                            <span class="badge bg-success">{{ rn.apgar_1_min }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rn.apgar_5_min < 7 %}
+                                            <span class="badge bg-danger">{{ rn.apgar_5_min }}</span>
+                                        {% else %}
+                                            <span class="badge bg-success">{{ rn.apgar_5_min }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rn.lactancia_precoz %}
+                                            <span class="badge bg-success">Sí</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if rn.apego_piel_a_piel %}
+                                            <span class="badge bg-success">Sí</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">No hay RN registrados para el período</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón volver -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{% url 'app:home' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

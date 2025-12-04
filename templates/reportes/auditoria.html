@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+
+{% block title %}Auditoría del Sistema{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-shield-check"></i> Auditoría del Sistema
+                    </h2>
+                    <p class="text-muted mb-0">Registro de inicios de sesión, cambios de datos y actividades de usuarios</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Generales -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">
+                        <i class="bi bi-check-circle"></i> Inicios Exitosos
+                    </h6>
+                    <h2 class="mb-0">{{ total_logins }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">
+                        <i class="bi bi-x-circle"></i> Inicios Fallidos
+                    </h6>
+                    <h2 class="mb-0">{{ total_logins_fallidos }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">
+                        <i class="bi bi-pencil-square"></i> Modificaciones
+                    </h6>
+                    <h2 class="mb-0">{{ total_modificaciones }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Selector de Tipo de Auditoría -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group w-100" role="group">
+                <a href="?tipo=login" class="btn btn-{% if tipo_auditoria == 'login' %}primary{% else %}outline-primary{% endif %}">
+                    <i class="bi bi-box-arrow-in-right"></i> Auditoría de Logins
+                </a>
+                <a href="?tipo=modificacion" class="btn btn-{% if tipo_auditoria == 'modificacion' %}primary{% else %}outline-primary{% endif %}">
+                    <i class="bi bi-pencil-square"></i> Auditoría de Modificaciones
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Auditoría -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        {% if tipo_auditoria == 'login' %}
+                            <i class="bi bi-box-arrow-in-right"></i> Registro de Inicios de Sesión
+                        {% else %}
+                            <i class="bi bi-pencil-square"></i> Registro de Modificaciones
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        {% if tipo_auditoria == 'login' %}
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Tipo Evento</th>
+                                        <th>Fecha/Hora</th>
+                                        <th>Dirección IP</th>
+                                        <th>Navegador</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for auditoria in auditorias %}
+                                    <tr>
+                                        <td>
+                                            {% if auditoria.usuario %}
+                                                {{ auditoria.usuario.get_full_name }}
+                                                <br><small class="text-muted">{{ auditoria.usuario.get_rol_display }}</small>
+                                            {% else %}
+                                                {{ auditoria.nombre_usuario }}
+                                                <br><small class="text-muted text-danger">Usuario no encontrado</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ auditoria.get_tipo_evento_display }}</td>
+                                        <td>{{ auditoria.fecha_evento|date:"d/m/Y H:i:s" }}</td>
+                                        <td>{{ auditoria.direccion_ip|default:"-" }}</td>
+                                        <td><small>{{ auditoria.user_agent|truncatewords:3|default:"-" }}</small></td>
+                                        <td>
+                                            {% if auditoria.exitoso %}
+                                                <span class="badge bg-success">Exitoso</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Fallido</span>
+                                                {% if auditoria.razon_fallo %}
+                                                    <br><small class="text-danger">{{ auditoria.razon_fallo }}</small>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4">No hay registros de auditoría disponibles</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Operación</th>
+                                        <th>Modelo</th>
+                                        <th>Fecha/Hora</th>
+                                        <th>Descripción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for auditoria in auditorias %}
+                                    <tr>
+                                        <td>
+                                            {% if auditoria.usuario %}
+                                                {{ auditoria.usuario.get_full_name }}
+                                                <br><small class="text-muted">{{ auditoria.usuario.get_rol_display }}</small>
+                                            {% else %}
+                                                <span class="text-muted">Sistema</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if auditoria.tipo_operacion == 'create' %}
+                                                <span class="badge bg-success">Creación</span>
+                                            {% elif auditoria.tipo_operacion == 'update' %}
+                                                <span class="badge bg-info">Modificación</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Eliminación</span>
+                                            {% endif %}
+                                        </td>
+                                        <td><code>{{ auditoria.modelo }}</code></td>
+                                        <td>{{ auditoria.fecha_evento|date:"d/m/Y H:i:s" }}</td>
+                                        <td>{{ auditoria.descripcion|truncatewords:10|default:"-" }}</td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-4">No hay registros de auditoría disponibles</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón volver -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{% url 'app:home' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

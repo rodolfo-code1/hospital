@@ -2,6 +2,7 @@
 # usuarios/models.py
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.utils import timezone
 
 class Usuario(AbstractUser):
     ROLES = [
@@ -51,3 +52,77 @@ class Usuario(AbstractUser):
     
     def es_recepcionista(self):
         return self.rol == 'recepcionista'
+
+
+class AuditoriaLogin(models.Model):
+    """Registro de auditoría de inicios de sesión"""
+    TIPO_EVENTO = [
+        ('login', 'Inicio de Sesión'),
+        ('logout', 'Cierre de Sesión'),
+        ('login_fallido', 'Login Fallido'),
+    ]
+    
+    usuario = models.ForeignKey(
+        Usuario, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='auditorias_login'
+    )
+    tipo_evento = models.CharField(max_length=20, choices=TIPO_EVENTO)
+    fecha_evento = models.DateTimeField(auto_now_add=True)
+    direccion_ip = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, verbose_name="Navegador/Dispositivo")
+    nombre_usuario = models.CharField(max_length=150, blank=True, verbose_name="Nombre Usuario Intentado")
+    exitoso = models.BooleanField(default=True)
+    razon_fallo = models.CharField(max_length=255, blank=True)
+    
+    class Meta:
+        verbose_name = "Auditoría Login"
+        verbose_name_plural = "Auditorías Login"
+        ordering = ['-fecha_evento']
+        indexes = [
+            models.Index(fields=['-fecha_evento']),
+            models.Index(fields=['usuario', '-fecha_evento']),
+        ]
+    
+    def __str__(self):
+        usuario_str = self.usuario.get_full_name() if self.usuario else self.nombre_usuario
+        return f"{usuario_str} - {self.get_tipo_evento_display()} - {self.fecha_evento.strftime('%d/%m/%Y %H:%M')}"
+
+
+class AuditoriaModificacion(models.Model):
+    """Registro de auditoría de modificaciones de datos"""
+    TIPO_OPERACION = [
+        ('create', 'Creación'),
+        ('update', 'Modificación'),
+        ('delete', 'Eliminación'),
+    ]
+    
+    usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='auditorias_modificacion'
+    )
+    tipo_operacion = models.CharField(max_length=20, choices=TIPO_OPERACION)
+    fecha_evento = models.DateTimeField(auto_now_add=True)
+    modelo = models.CharField(max_length=100, verbose_name="Modelo Afectado")
+    id_objeto = models.IntegerField(verbose_name="ID del Objeto")
+    descripcion = models.TextField(verbose_name="Descripción del Cambio", blank=True)
+    valores_anteriores = models.JSONField(default=dict, blank=True)
+    valores_nuevos = models.JSONField(default=dict, blank=True)
+    
+    class Meta:
+        verbose_name = "Auditoría Modificación"
+        verbose_name_plural = "Auditorías Modificación"
+        ordering = ['-fecha_evento']
+        indexes = [
+            models.Index(fields=['-fecha_evento']),
+            models.Index(fields=['usuario', '-fecha_evento']),
+            models.Index(fields=['modelo', 'id_objeto']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_tipo_operacion_display()} - {self.modelo} (ID: {self.id_objeto}) - {self.fecha_evento.strftime('%d/%m/%Y %H:%M')}"

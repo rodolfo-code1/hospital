@@ -2,6 +2,7 @@ from django.db import models
 from pacientes.models import Madre
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
+from simple_history.models import HistoricalRecords
 
 class Parto(models.Model):
     TIPO_PARTO = [
@@ -55,6 +56,9 @@ class Parto(models.Model):
         null=True, blank=True,
         related_name='partos_registrados'
     )
+
+    # Historial de cambios
+    history = HistoricalRecords()
     
     class Meta:
         verbose_name = "Parto"
@@ -109,6 +113,9 @@ class Aborto(models.Model):
     )
     diagnostico_final = models.TextField(blank=True)
     estado = models.CharField(max_length=20, choices=ESTADOS, default='derivado')
+
+    # Historial de cambios
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Caso Aborto/IVE"

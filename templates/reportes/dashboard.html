@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard de Reportes - Hospital Herminda Martín{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-bar-chart"></i> Dashboard de Reportes
+                    </h2>
+                    <p class="text-muted mb-0">Panel de supervisión y auditoría del sistema</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Generación de Reportes -->
+        <div class="col-lg-6">
+            <div class="card border-left-primary shadow h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-spreadsheet"></i> Generación de Reportes</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Visualiza reportes según las secciones del REM</p>
+                    <div class="list-group">
+                        <a href="{% url 'reportes:seccion_a' %}" class="list-group-item list-group-item-action">
+                            <h6 class="mb-1">Sección A: Información General de Partos</h6>
+                            <p class="mb-0 small text-muted">Estadísticas de partos, tipos y complicaciones</p>
+                        </a>
+                        <a href="{% url 'reportes:seccion_b' %}" class="list-group-item list-group-item-action">
+                            <h6 class="mb-1">Sección B: Interrupción del Embarazo</h6>
+                            <p class="mb-0 small text-muted">Registro de abortos y causales</p>
+                        </a>
+                        <a href="{% url 'reportes:seccion_c' %}" class="list-group-item list-group-item-action">
+                            <h6 class="mb-1">Sección C: Métodos Anticonceptivos al Alta</h6>
+                            <p class="mb-0 small text-muted">Cobertura de anticoncepción en el alta</p>
+                        </a>
+                        <a href="{% url 'reportes:seccion_d' %}" class="list-group-item list-group-item-action">
+                            <h6 class="mb-1">Sección D: Información de Recién Nacidos</h6>
+                            <p class="mb-0 small text-muted">Indicadores de recién nacidos</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Métricas Generales -->
+        <div class="col-lg-6">
+            <div class="card border-left-success shadow h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Métricas Generales</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Resumen de indicadores clave del sistema</p>
+                    <a href="{% url 'reportes:metricas' %}" class="btn btn-success w-100">
+                        <i class="bi bi-graph-up"></i> Ver Métricas Completas
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auditoría -->
+        <div class="col-lg-6">
+            <div class="card border-left-warning shadow h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-shield-check"></i> Auditoría del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Registro de inicios de sesión y cambios de datos</p>
+                    <a href="{% url 'reportes:auditoria' %}" class="btn btn-warning w-100">
+                        <i class="bi bi-shield-check"></i> Ver Auditoría
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

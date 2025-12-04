@@ -1,31 +1,58 @@
 <div class="col-12 mt-2"><h5 class="text-secondary border-bottom pb-2"><i class="bi bi-bar-chart-line"></i> Supervisión y Auditoría</h5></div>
 
-<div class="col-md-4">
-    <div class="card h-100 shadow-sm border-0 bg-dark text-white">
+<!-- Tarjeta: Generación de Reportes (estilo Dashboard) -->
+<div class="col-lg-6 col-md-12">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-file-earmark-spreadsheet"></i> Generación de Reportes</h5>
+        </div>
         <div class="card-body">
-            <h5 class="card-title"><i class="bi bi-table"></i> Reporte REM BS22</h5>
-            <p class="card-text small text-white-50">Exportación estadística mensual para MINSAL.</p>
-            <a href="{% url 'altas:exportar_excel' %}" class="btn btn-light btn-sm w-100 stretched-link text-dark fw-bold">Generar Excel</a>
+            <p class="text-muted mb-3">Visualiza reportes según las secciones del REM</p>
+            <div class="list-group">
+                <a href="{% url 'reportes:seccion_a' %}" class="list-group-item list-group-item-action">
+                    <h6 class="mb-1">Sección A: Información General de Partos</h6>
+                    <p class="mb-0 small text-muted">Estadísticas de partos, tipos y complicaciones</p>
+                </a>
+                <a href="{% url 'reportes:seccion_b' %}" class="list-group-item list-group-item-action">
+                    <h6 class="mb-1">Sección B: Interrupción del Embarazo</h6>
+                    <p class="mb-0 small text-muted">Registro de abortos y causales</p>
+                </a>
+                <a href="{% url 'reportes:seccion_c' %}" class="list-group-item list-group-item-action">
+                    <h6 class="mb-1">Sección C: Métodos Anticonceptivos al Alta</h6>
+                    <p class="mb-0 small text-muted">Cobertura de anticoncepción en el alta</p>
+                </a>
+                <a href="{% url 'reportes:seccion_d' %}" class="list-group-item list-group-item-action">
+                    <h6 class="mb-1">Sección D: Información de Recién Nacidos</h6>
+                    <p class="mb-0 small text-muted">Indicadores de recién nacidos</p>
+                </a>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="col-md-4">
-    <div class="card h-100 shadow-sm border-0 bg-light">
+<!-- Right column: Métricas y Auditoría, con tamaño y estilo similares a Generación de Reportes -->
+<div class="col-lg-6 col-md-12 d-flex flex-column gap-3">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-graph-up"></i> Métricas Generales</h5>
+        </div>
         <div class="card-body">
-            <h5 class="card-title text-secondary"><i class="bi bi-eye"></i> Auditoría</h5>
-            <p class="card-text small text-muted">Bitácora de acciones y cambios.</p>
-            <button class="btn btn-outline-secondary btn-sm w-100" disabled>Ver Logs (Pronto)</button>
+            <p class="text-muted mb-3">Resumen de indicadores clave del sistema</p>
+            <a href="{% url 'reportes:metricas' %}" class="btn btn-success w-100">
+                <i class="bi bi-graph-up"></i> Ver Métricas Completas
+            </a>
         </div>
     </div>
-</div>
 
-<div class="col-md-4">
-    <div class="card h-100 shadow-sm border-0 bg-light">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><i class="bi bi-shield-check"></i> Auditoría del Sistema</h5>
+        </div>
         <div class="card-body">
-            <h5 class="card-title text-secondary"><i class="bi bi-pie-chart"></i> Métricas</h5>
-            <p class="card-text small text-muted">Resumen de ocupación y partos.</p>
-            <button class="btn btn-outline-secondary btn-sm w-100" disabled>Ver Gráficos (Pronto)</button>
+            <p class="text-muted mb-3">Registro de inicios de sesión y cambios de datos</p>
+            <a href="{% url 'reportes:auditoria' %}" class="btn btn-warning w-100">
+                <i class="bi bi-shield-check"></i> Ver Auditoría
+            </a>
         </div>
     </div>
 </div>

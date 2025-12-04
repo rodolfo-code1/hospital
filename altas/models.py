@@ -5,6 +5,7 @@ from partos.models import Parto
 from recien_nacidos.models import RecienNacido
 from django.utils import timezone
 from partos.models import Parto, Aborto
+from simple_history.models import HistoricalRecords
 
 class Alta(models.Model):
     """
@@ -82,6 +83,8 @@ class Alta(models.Model):
         null=True, blank=True
     )
     
+    # Historial de cambios
+    history = HistoricalRecords()
     
     class Meta:
         verbose_name = "Alta"

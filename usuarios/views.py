@@ -5,8 +5,47 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import RegistroUsuarioForm,EditarUsuarioForm
-from .models import Usuario
+from .models import Usuario, AuditoriaLogin
 from .decorators import encargado_ti_requerido
+from django.http import HttpRequest
+
+def get_client_ip(request: HttpRequest):
+    """Obtiene la IP del cliente"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
+
+def registrar_login(request, usuario, exitoso=True, razon_fallo=''):
+    """Registra el intento de login en la auditoría"""
+    try:
+        AuditoriaLogin.objects.create(
+            usuario=usuario,
+            tipo_evento='login' if exitoso else 'login_fallido',
+            direccion_ip=get_client_ip(request),
+            user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            nombre_usuario=usuario.username if usuario else request.POST.get('username', ''),
+            exitoso=exitoso,
+            razon_fallo=razon_fallo
+        )
+    except Exception as e:
+        print(f"Error registrando login: {e}")
+
+def registrar_logout(request):
+    """Registra el logout en la auditoría"""
+    try:
+        if request.user.is_authenticated:
+            AuditoriaLogin.objects.create(
+                usuario=request.user,
+                tipo_evento='logout',
+                direccion_ip=get_client_ip(request),
+                user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+                exitoso=True
+            )
+    except Exception as e:
+        print(f"Error registrando logout: {e}")
 
 def registro_view(request):
     """Vista de auto-registro de usuarios"""
@@ -45,10 +84,12 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
+            registrar_login(request, user, exitoso=True)
             messages.success(request, f'Bienvenido {user.get_full_name()}')
             next_url = request.GET.get('next', 'app:home')
             return redirect(next_url)
         else:
+            registrar_login(request, None, exitoso=False, razon_fallo='RUT o contraseña incorrectos')
             messages.error(request, 'RUT o contraseña incorrectos.')
     
     return render(request, 'usuarios/login.html')
@@ -56,6 +97,7 @@ def login_view(request):
 @login_required
 def logout_view(request):
     """Vista de cierre de sesión"""
+    registrar_logout(request)
     logout(request)
     messages.info(request, 'Has cerrado sesión exitosamente')
     return redirect('usuarios:login')

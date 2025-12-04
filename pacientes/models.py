@@ -2,6 +2,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
+from simple_history.models import HistoricalRecords
 
 class Madre(models.Model):
     PREVISION_CHOICES = [
@@ -74,6 +75,9 @@ class Madre(models.Model):
         default='observacion',
         verbose_name="Estado de Salud"
     )
+
+    # Historial de cambios
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Madre"

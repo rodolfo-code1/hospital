@@ -1,3 +1,4 @@
 from django.contrib import admin
 
-# Register your models here.
+# Los reportes son vistas dinámicas, no necesitan registros en admin
+# La auditoría se manage desde usuarios/admin.py

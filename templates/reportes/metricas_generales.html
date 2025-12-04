@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Métricas Generales del Sistema{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-graph-up"></i> Métricas Generales
+                    </h2>
+                    <p class="text-muted mb-0">Resumen de indicadores clave del sistema</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Período</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="fecha_inicio" class="form-label">Fecha Inicio</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" value="{{ fecha_inicio }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="fecha_fin" class="form-label">Fecha Fin</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin" value="{{ fecha_fin }}">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search"></i> Actualizar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas Principales -->
+    <div class="row mb-4 g-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">
+                        <i class="bi bi-heart-pulse"></i> Total de Partos
+                    </h6>
+                    <h2 class="mb-0">{{ total_partos }}</h2>
+                    <small class="text-white-50">Período: {{ fecha_inicio }} a {{ fecha_fin }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">
+                        <i class="bi bi-baby"></i> Total de Recién Nacidos
+                    </h6>
+                    <h2 class="mb-0">{{ total_rn }}</h2>
+                    <small class="text-white-50">Período: {{ fecha_inicio }} a {{ fecha_fin }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">
+                        <i class="bi bi-person-check"></i> Altas de Madres
+                    </h6>
+                    <h2 class="mb-0">{{ total_altas_madre }}</h2>
+                    <small class="text-white-50">Período: {{ fecha_inicio }} a {{ fecha_fin }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm bg-warning text-dark">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">
+                        <i class="bi bi-person-check"></i> Altas de Recién Nacidos
+                    </h6>
+                    <h2 class="mb-0">{{ total_altas_rn }}</h2>
+                    <small class="text-muted">Período: {{ fecha_inicio }} a {{ fecha_fin }}</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm bg-danger text-white">
+                <div class="card-body">
+                    <h6 class="card-title mb-2">
+                        <i class="bi bi-exclamation-triangle"></i> Total de Abortos
+                    </h6>
+                    <h2 class="mb-0">{{ total_abortos }}</h2>
+                    <small class="text-white-50">Período: {{ fecha_inicio }} a {{ fecha_fin }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ratios e Indicadores -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Indicadores Clave</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 text-center">
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Razón RN/Parto</h6>
+                            <h4 class="fw-bold">{{ razon_rn_parto }}</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Tasa de Aborto</h6>
+                            <h4 class="fw-bold">{{ tasa_aborto }}%</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">% Altas Completadas</h6>
+                            <h4 class="fw-bold">{{ porcentaje_altas }}%</h4>
+                        </div>
+                        <div class="col-md-3">
+                            <h6 class="text-muted">Promedio RN/Día</h6>
+                            <h4 class="fw-bold">{{ promedio_rn_dia }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón volver -->
+    <div class="row">
+        <div class="col-12">
+            <a href="{% url 'app:home' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
