@@ -1,13 +1,11 @@
-# hospital/altas/forms.py
 from django import forms
 from .models import Alta
 from pacientes.models import Madre
 from partos.models import Parto
 from recien_nacidos.models import RecienNacido
 
-# ... (CrearAltaForm se mantiene igual por ahora) ...
+# (CrearAltaForm se mantiene igual)
 class CrearAltaForm(forms.ModelForm):
-    # ... (tu código actual de CrearAltaForm) ...
     class Meta:
         model = Alta
         fields = ['madre', 'parto', 'recien_nacido', 'observaciones']
@@ -27,20 +25,23 @@ class CrearAltaForm(forms.ModelForm):
         self.fields['madre'].required = False
         self.fields['parto'].required = False
         self.fields['recien_nacido'].required = False
+        self.fields['madre'].label = "Seleccionar Madre (Sana)"
+        self.fields['recien_nacido'].label = "Seleccionar Recién Nacido (Sano)"
 
     def clean(self):
         cleaned_data = super().clean()
-        madre = cleaned_data.get('madre')
-        rn = cleaned_data.get('recien_nacido')
-        if not madre and not rn:
+        if not cleaned_data.get('madre') and not cleaned_data.get('recien_nacido'):
             raise forms.ValidationError("Debe seleccionar al menos un paciente.")
         return cleaned_data
 
 
 class ConfirmarAltaClinicaForm(forms.Form):
+    """
+    Formulario actualizado: Auto-firma médica y registro de Anticonceptivos.
+    """
     confirmar_alta_clinica = forms.BooleanField(
         required=True, 
-        label="Confirmo que el alta clínica puede ser autorizada", 
+        label="Doy fe que los pacientes cumplen criterios de alta.", 
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
     
@@ -48,46 +49,36 @@ class ConfirmarAltaClinicaForm(forms.Form):
         max_length=200, 
         required=True, 
         label="Médico Responsable",
-        widget=forms.TextInput(attrs={
-            'class': 'form-control bg-light', # Fondo gris claro
-            'readonly': 'readonly',           # Bloqueado para edición
-            'id': 'medico_nombre'
-        })
+        widget=forms.TextInput(attrs={'class': 'form-control bg-light', 'readonly': 'readonly'})
     )
+    
+    # --- SECCIÓN ANTICONCEPTIVOS ---
+    se_entrego_anticonceptivo = forms.BooleanField(
+        required=False, 
+        label="¿Se entrega método anticonceptivo (MAC)?",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'check_mac'})
+    )
+    
+    metodo_anticonceptivo = forms.ChoiceField(
+        required=False,
+        choices=Alta.METODOS_ANTICONCEPTIVOS,
+        label="Método Seleccionado",
+        widget=forms.Select(attrs={'class': 'form-select', 'id': 'select_mac', 'disabled': 'true'})
+    )
+    # -------------------------------
     
     observaciones_clinicas = forms.CharField(
         required=False, 
-        label="Observaciones / Indicaciones",
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
+        label="Indicaciones Finales",
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Indicaciones de egreso...'})
     )
-# ... (ConfirmarAltaAdministrativaForm y BuscarAltaForm se mantienen igual) ...
+
+
 class ConfirmarAltaAdministrativaForm(forms.Form):
-    """
-    Formulario para confirmar alta administrativa.
-    El nombre se carga automáticamente.
-    """
-    confirmar_alta_administrativa = forms.BooleanField(
-        required=True, 
-        label="Confirmo que el alta administrativa está completa", 
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
-    )
-    
-    administrativo_nombre = forms.CharField(
-        max_length=200, 
-        required=True, 
-        label="Administrativo Responsable",
-        widget=forms.TextInput(attrs={
-            'class': 'form-control bg-light', # Fondo gris
-            'readonly': 'readonly',           # Bloqueado
-            'id': 'administrativo_nombre'
-        })
-    )
-    
-    observaciones_administrativas = forms.CharField(
-        required=False, 
-        label="Observaciones de Cierre",
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3})
-    )
+    confirmar_alta_administrativa = forms.BooleanField(required=True, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    administrativo_nombre = forms.CharField(max_length=200, required=True, widget=forms.TextInput(attrs={'class': 'form-control bg-light', 'readonly': 'readonly'}))
+    observaciones_administrativas = forms.CharField(required=False, widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}))
+
 class BuscarAltaForm(forms.Form):
     ESTADO_CHOICES = [('', 'Todos')] + list(Alta.ESTADO_ALTA)
     buscar = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Buscar...'}))

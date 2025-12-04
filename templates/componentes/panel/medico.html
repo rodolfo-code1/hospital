@@ -6,8 +6,23 @@
             <div class="display-4 text-success mb-2"><i class="bi bi-clipboard2-pulse"></i></div>
             <h6 class="card-title fw-bold">Gestionar Altas</h6>
             <p class="card-text small text-muted">Evaluar pacientes y dar alta médica.</p>
-            <a href="{% url 'altas:panel_medico' %}" class="btn btn-success btn-sm w-100 stretched-link">
-                Ir a Sala
+            <a href="{% url 'altas:panel_medico' %}" class="btn btn-success btn-sm w-100 stretched-link">Ir a Sala</a>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-6 col-lg-3">
+    <div class="card h-100 shadow-sm border-0 border-top border-danger border-4 hover-shadow">
+        <div class="card-body text-center">
+            <div class="display-4 text-danger mb-2"><i class="bi bi-hospital-fill"></i></div>
+            <h6 class="card-title fw-bold text-danger">Casos IVE / Aborto</h6>
+            <p class="card-text small text-muted">Resolver derivaciones.</p>
+            
+            <a href="{% url 'partos:panel_abortos' %}" class="btn btn-outline-danger btn-sm w-100 stretched-link">
+                Revisar Casos
+                {% if pendientes_ive > 0 %}
+                    <span class="badge bg-danger text-white ms-1">{{ pendientes_ive }}</span>
+                {% endif %}
             </a>
         </div>
     </div>
@@ -31,21 +46,9 @@
         <div class="card-body text-center">
             <div class="display-4 text-danger mb-2"><i class="bi bi-exclamation-triangle"></i></div>
             <h6 class="card-title fw-bold">Alertas</h6>
-            <p class="card-text small text-muted">Pacientes críticos o con complicaciones.</p>
+            <p class="card-text small text-muted">Pacientes críticos o complicaciones.</p>
             <a href="{% url 'altas:alertas_clinicas' %}" class="btn btn-outline-danger btn-sm w-100 stretched-link">
                 Ver Críticos <span class="badge bg-danger text-white ms-1">{{ total_alertas|default:"0" }}</span>
-            </a>
-        </div>
-    </div>
-</div>
-
-<div class="col-md-6 col-lg-3">
-    <div class="card h-100 shadow-sm border-0 bg-light">
-        <div class="card-body text-center d-flex flex-column justify-content-center">
-            <div class="fs-2 text-secondary mb-2"><i class="bi bi-archive"></i></div>
-            <h6 class="card-title fw-bold text-muted">Historial</h6>
-            <a href="{% url 'altas:historial_altas' %}" class="btn btn-outline-secondary btn-sm w-100 mt-2 stretched-link">
-                Buscar Paciente
             </a>
         </div>
     </div>

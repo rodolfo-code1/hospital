@@ -17,7 +17,14 @@ class MadreForm(forms.ModelForm):
         widgets = {
             'rut': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '12.345.678-9'}),
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
-            'fecha_nacimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            
+           
+            'fecha_nacimiento': forms.DateInput(
+                attrs={'class': 'form-control', 'type': 'date'},
+                format='%Y-%m-%d'
+            ),
+           
+            
             'edad': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
             'nacionalidad': forms.TextInput(attrs={'class': 'form-control', 'value': 'Chilena'}),
             'prevision': forms.Select(attrs={'class': 'form-select'}),
@@ -48,8 +55,7 @@ class MadreForm(forms.ModelForm):
 class MadreRecepcionForm(MadreForm):
     """
     Formulario para Recepcionistas.
-    AHORA INCLUYE TODO (Hereda todos los campos de MadreForm),
-    pero destaca la alerta visualmente.
+    Hereda la configuración corregida de fecha_nacimiento.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

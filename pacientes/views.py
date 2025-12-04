@@ -1,14 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
-from django.utils import timezone
+from django.db.models import Q, Exists, OuterRef
 from .models import Madre
 from .forms import MadreForm, MadreRecepcionForm
 from usuarios.decorators import rol_requerido
 from usuarios.models import Usuario
 from app.models import Notificacion
+# --- IMPORTS NUEVOS PARA FILTRADO ---
+from partos.models import Aborto, Parto
+from recien_nacidos.models import RecienNacido
 
+# ==========================================
+# VISTA RECEPCIONISTA: ADMISIÓN + ALERTA
+# ==========================================
 @login_required
 def registrar_madre_recepcion(request):
     if request.user.rol not in ['recepcionista', 'jefatura', 'encargado_ti']:
@@ -16,79 +21,124 @@ def registrar_madre_recepcion(request):
          return redirect('app:home')
 
     if request.method == 'POST':
-        # Obtenemos el RUT crudo para buscar
+        # RUT crudo para verificar reingreso
         rut_raw = request.POST.get('rut', '').replace('.', '').replace('-', '').upper()
         rut_formateado = f"{rut_raw[:-1]}-{rut_raw[-1]}" if len(rut_raw) > 1 else rut_raw
         
-        # Buscamos si ya existe
         madre_existente = Madre.objects.filter(rut=rut_formateado).first()
-        
+
         if madre_existente:
-            # --- CASO A: YA EXISTE ---
+            # --- REINGRESO (Si ya existe) ---
             if madre_existente.estado_alta == 'hospitalizado':
-                messages.warning(request, f'La paciente {madre_existente.nombre} ya está activa en el sistema.')
+                messages.warning(request, f'La paciente {madre_existente.nombre} ya está activa en sala.')
                 return redirect('app:home')
             else:
-                # --- REINGRESO (Estaba de alta) ---
+                # Reactivar paciente antigua
                 form = MadreRecepcionForm(request.POST, instance=madre_existente)
                 if form.is_valid():
                     madre = form.save(commit=False)
-                    
-                    # ACTUALIZACIÓN CLAVE PARA PERMITIR NUEVO PARTO
-                    madre.estado_alta = 'hospitalizado'
-                    madre.fecha_ingreso = timezone.now() # <--- ¡Importante! Reinicia el ciclo
+                    madre.estado_alta = 'hospitalizado' # Reactivar
                     madre.estado_salud = 'observacion'
+                    # Importante: update fecha_ingreso para que cuente como nuevo ciclo
+                    from django.utils import timezone
+                    madre.fecha_ingreso = timezone.now() 
                     madre.save()
                     
-                    # Notificar Reingreso
-                    crear_notificacion(madre, reingreso=True)
-                    
-                    messages.success(request, f'REINGRESO EXITOSO: Paciente {madre.nombre} activada para nuevo proceso.')
+                    # Notificar
+                    crear_notificacion_ingreso(madre, reingreso=True)
+                    messages.success(request, f'REINGRESO: Paciente {madre.nombre} activada.')
                     return redirect('app:home')
         else:
-            # --- CASO B: NUEVA ---
+            # --- NUEVO INGRESO ---
             form = MadreRecepcionForm(request.POST)
             if form.is_valid():
                 madre = form.save(commit=False)
                 madre.creado_por = request.user
                 madre.save()
                 
-                # Notificar Nuevo Ingreso
-                crear_notificacion(madre, reingreso=False)
-                
-                messages.success(request, f'Paciente {madre.nombre} registrada exitosamente.')
+                crear_notificacion_ingreso(madre, reingreso=False)
+                messages.success(request, f'Paciente {madre.nombre} registrada.')
                 return redirect('app:home')
     else:
         form = MadreRecepcionForm()
     
     return render(request, 'pacientes/registrar_madre.html', {
         'form': form,
-        'titulo': 'Admisión y Reingreso',
-        'subtitulo': 'Ingrese RUT para registrar nueva o reingresar antigua.'
+        'titulo': 'Admisión de Paciente',
+        'subtitulo': 'Registro o Reingreso de Pacientes'
     })
 
-def crear_notificacion(madre, reingreso=False):
-    """Función auxiliar para notificar a las matronas"""
+def crear_notificacion_ingreso(madre, reingreso=False):
+    """Auxiliar para notificar a matronas"""
     tiene_alerta = bool(madre.alerta_recepcion)
-    tipo_noti = 'urgente' if tiene_alerta else 'info'
-    titulo_pre = "🚨 ALERTA" if tiene_alerta else ("🔄 REINGRESO" if reingreso else "Nuevo Ingreso")
-    
-    mensaje = f"Paciente: {madre.nombre}\nRUT: {madre.rut}"
-    if tiene_alerta: mensaje += f"\n⚠️: {madre.alerta_recepcion}"
+    tipo = 'urgente' if tiene_alerta else 'info'
+    titulo = "🚨 ALERTA INGRESO" if tiene_alerta else ("🔄 REINGRESO" if reingreso else "Nuevo Ingreso")
+    msg = f"Paciente: {madre.nombre}\nRUT: {madre.rut}"
+    if tiene_alerta: msg += f"\n⚠️: {madre.alerta_recepcion}"
     
     matronas = Usuario.objects.filter(rol='matrona')
-    objs = [Notificacion(usuario=m, titulo=titulo_pre, mensaje=mensaje, tipo=tipo_noti, link=f"/pacientes/completar/{madre.pk}/") for m in matronas]
+    objs = [Notificacion(usuario=m, titulo=titulo, mensaje=msg, tipo=tipo, link=f"/pacientes/completar/{madre.pk}/") for m in matronas]
     Notificacion.objects.bulk_create(objs)
 
-# ... (Resto de vistas: lista_pacientes, ver_ficha, editar, etc. se mantienen igual)
+
+# ==========================================
+# GESTIÓN CLÍNICA (MATRONA) - LISTADO FILTRADO
+# ==========================================
+
 @login_required
 def lista_pacientes(request):
-    # Mostrar solo las que están HOSPITALIZADAS para no llenar la lista de antiguas
+    """
+    Listado de trabajo para la Matrona.
+    Muestra pacientes hospitalizadas que AÚN requieren atención (Parto o Completar ficha).
+    EXCLUYE:
+    1. Pacientes con Aborto/IVE ya resuelto por el médico.
+    2. Pacientes que ya tienen Recién Nacido registrado en este ingreso.
+    """
+    # 1. Base: Solo las que están en el hospital
     madres = Madre.objects.filter(estado_alta='hospitalizado').order_by('-fecha_ingreso')
+    
+    # 2. Filtrado Lógico (Python) para excluir casos resueltos
+    madres_pendientes = []
+    
+    for m in madres:
+        # A. Verificar si tiene Aborto Resuelto (Confirmado) en este ingreso
+        tiene_aborto_listo = m.abortos.filter(
+            estado='confirmado',
+            fecha_derivacion__gte=m.fecha_ingreso
+        ).exists()
+        
+        if tiene_aborto_listo:
+            continue # Saltamos esta madre (ya la atiende el médico o está lista)
+
+        # B. Verificar si ya tiene Parto con Recién Nacido en este ingreso
+        # (Buscamos partos desde que ingresó y vemos si tienen hijos)
+        tiene_rn_listo = False
+        partos_ingreso = m.partos.filter(fecha_registro__gte=m.fecha_ingreso)
+        for p in partos_ingreso:
+            if p.recien_nacidos.exists():
+                tiene_rn_listo = True
+                break
+        
+        if tiene_rn_listo:
+            continue # Saltamos esta madre (ya dio a luz y se registró al bebé)
+
+        # Si pasa los filtros, la agregamos a la lista
+        madres_pendientes.append(m)
+
+    # 3. Búsqueda en la lista filtrada
     query = request.GET.get('q')
     if query:
-        madres = madres.filter(Q(rut__icontains=query) | Q(nombre__icontains=query))
-    return render(request, 'pacientes/lista_pacientes.html', {'madres': madres, 'query': query})
+        query = query.lower()
+        madres_pendientes = [
+            m for m in madres_pendientes 
+            if query in m.rut.lower() or query in m.nombre.lower()
+        ]
+        
+    return render(request, 'pacientes/lista_pacientes.html', {
+        'madres': madres_pendientes, # Pasamos la lista filtrada
+        'query': query
+    })
+
 
 @login_required
 def ver_ficha_clinica(request, pk):
@@ -110,7 +160,7 @@ def editar_ficha_clinica(request, pk):
         form = MadreForm(instance=madre)
     return render(request, 'pacientes/registrar_madre.html', {'form': form, 'titulo': 'Editar Ficha', 'subtitulo': f'{madre.nombre}'})
 
-# Redirecciones compatibilidad
+# Compatibilidad
 @login_required
 def registrar_madre(request): return redirect('pacientes:admision_madre')
 @login_required

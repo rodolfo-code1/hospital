@@ -4,10 +4,8 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        
+    <div class="col-md-7">
         <div class="card shadow-lg border-0">
-            
             <div class="card-header {% if tipo_confirmacion == 'clínica' %}bg-success{% else %}bg-primary{% endif %} text-white py-3">
                 <div class="d-flex align-items-center">
                     <i class="bi {% if tipo_confirmacion == 'clínica' %}bi-stethoscope{% else %}bi-building-check{% endif %} fs-3 me-3"></i>
@@ -19,68 +17,62 @@
             </div>
 
             <div class="card-body p-4 bg-light bg-opacity-25">
-
-                <h6 class="text-muted fw-bold text-uppercase mb-3">Pacientes a Egresar</h6>
                 <div class="row g-3 mb-4">
-                    
                     {% if alta.madre %}
                     <div class="col-md-6">
                         <div class="card h-100 border-primary border-start border-4 shadow-sm">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-2">
-                                    <div class="text-primary me-2"><i class="bi bi-person-standing-dress fs-4"></i></div>
-                                    <div>
-                                        <h6 class="fw-bold mb-0">{{ alta.madre.nombre }}</h6>
-                                        <small class="text-muted">{{ alta.madre.rut }}</small>
-                                    </div>
-                                </div>
-                                <ul class="list-unstyled small text-muted mb-0 ms-4">
-                                    <li><strong>Edad:</strong> {{ alta.madre.edad }} años</li>
-                                    <li><strong>Previsión:</strong> {{ alta.madre.get_prevision_display }}</li>
-                                </ul>
+                            <div class="card-body py-2">
+                                <h6 class="fw-bold text-primary mb-0">{{ alta.madre.nombre }}</h6>
+                                <small class="text-muted">Madre - {{ alta.madre.rut }}</small>
                             </div>
                         </div>
                     </div>
                     {% endif %}
-
                     {% if alta.recien_nacido %}
                     <div class="col-md-6">
                         <div class="card h-100 border-success border-start border-4 shadow-sm">
-                            <div class="card-body">
-                                <div class="d-flex align-items-center mb-2">
-                                    <div class="text-success me-2"><i class="bi bi-emoji-smile fs-4"></i></div>
-                                    <div>
-                                        <h6 class="fw-bold mb-0">{{ alta.recien_nacido.codigo_unico }}</h6>
-                                        <small class="text-muted">Recién Nacido</small>
-                                    </div>
-                                </div>
-                                <ul class="list-unstyled small text-muted mb-0 ms-4">
-                                    <li><strong>Peso:</strong> {{ alta.recien_nacido.peso }} kg</li>
-                                    <li><strong>Sexo:</strong> {{ alta.recien_nacido.get_sexo_display }}</li>
-                                </ul>
+                            <div class="card-body py-2">
+                                <h6 class="fw-bold text-success mb-0">{{ alta.recien_nacido.codigo_unico }}</h6>
+                                <small class="text-muted">Recién Nacido</small>
                             </div>
                         </div>
                     </div>
                     {% endif %}
                 </div>
 
-                <hr class="my-4">
-
                 <form method="post">
                     {% csrf_token %}
                     
                     <div class="mb-4">
+                        <label class="form-label fw-bold text-muted">
+                            {% if tipo_confirmacion == 'clínica' %}Médico Responsable{% else %}Administrativo Responsable{% endif %}
+                        </label>
                         {% if tipo_confirmacion == 'clínica' %}
-                            <label class="form-label fw-bold text-success">Médico Responsable</label>
                             {{ form.medico_nombre }}
                         {% else %}
-                            <label class="form-label fw-bold text-primary">Administrativo Responsable</label>
                             {{ form.administrativo_nombre }}
                         {% endif %}
-                        <div class="form-text text-muted">
-                            <i class="bi bi-shield-check"></i> Usuario verificado por el sistema.
+                    </div>
+
+                    {% if tipo_confirmacion == 'clínica' and alta.madre %}
+                    <div class="card border-info border-opacity-50 mb-4 shadow-sm">
+                        <div class="card-header bg-info bg-opacity-10 text-info fw-bold">
+                            <i class="bi bi-capsule-pill"></i> Planificación Familiar
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check form-switch mb-3">
+                                {{ form.se_entrego_anticonceptivo }}
+                                <label class="form-check-label fw-bold" for="check_mac">
+                                    ¿Se entrega método anticonceptivo al alta?
+                                </label>
+                            </div>
+                            <div class="ms-4">
+                                <label class="form-label small text-muted">Seleccione Método:</label>
+                                {{ form.metodo_anticonceptivo }}
+                            </div>
                         </div>
                     </div>
+                    {% endif %}
 
                     <div class="card bg-white border mb-4">
                         <div class="card-body">
@@ -88,12 +80,12 @@
                                 {% if tipo_confirmacion == 'clínica' %}
                                     {{ form.confirmar_alta_clinica }}
                                     <label class="form-check-label ms-2 fw-bold text-dark" for="{{ form.confirmar_alta_clinica.id_for_label }}">
-                                        Certifico que los pacientes cumplen con los criterios clínicos para el egreso hospitalario.
+                                        Certifico cumplimiento de criterios clínicos.
                                     </label>
                                 {% else %}
                                     {{ form.confirmar_alta_administrativa }}
                                     <label class="form-check-label ms-2 fw-bold text-dark" for="{{ form.confirmar_alta_administrativa.id_for_label }}">
-                                        Confirmo que el trámite administrativo y documentos están completos.
+                                        Confirmo trámite administrativo completo.
                                     </label>
                                 {% endif %}
                             </div>
@@ -105,7 +97,7 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label fw-bold">Observaciones Finales (Opcional)</label>
+                        <label class="form-label fw-bold">Observaciones Finales</label>
                         {% if tipo_confirmacion == 'clínica' %}
                             {{ form.observaciones_clinicas }}
                         {% else %}
@@ -114,17 +106,37 @@
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'altas:detalle_alta' alta.pk %}" class="btn btn-light border btn-lg px-4">
-                            Cancelar
-                        </a>
-                        <button type="submit" class="btn {% if tipo_confirmacion == 'clínica' %}btn-success{% else %}btn-primary{% endif %} btn-lg px-5 shadow-sm">
-                            <i class="bi bi-pen-fill me-2"></i> Firmar Alta
+                        <a href="{% url 'altas:detalle_alta' alta.pk %}" class="btn btn-light border px-4">Cancelar</a>
+                        <button type="submit" class="btn {% if tipo_confirmacion == 'clínica' %}btn-success{% else %}btn-primary{% endif %} px-5 shadow-sm">
+                            <i class="bi bi-pen-fill me-2"></i> Firmar
                         </button>
                     </div>
-
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+{% if tipo_confirmacion == 'clínica' %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkMac = document.getElementById('check_mac');
+        const selectMac = document.getElementById('select_mac');
+        
+        if(checkMac && selectMac) {
+            function toggleSelect() {
+                if (checkMac.checked) {
+                    selectMac.removeAttribute('disabled');
+                    if(selectMac.value === 'ninguno') selectMac.value = ''; // Reset si estaba en ninguno
+                } else {
+                    selectMac.setAttribute('disabled', 'true');
+                    selectMac.value = 'ninguno';
+                }
+            }
+            checkMac.addEventListener('change', toggleSelect);
+            toggleSelect(); // Estado inicial
+        }
+    });
+</script>
+{% endif %}
 {% endblock %}

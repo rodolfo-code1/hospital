@@ -6,7 +6,7 @@
 <div class="row mb-4 align-items-center">
     <div class="col-md-8">
         <h2 class="text-danger mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Alertas Clínicas</h2>
-        <p class="text-muted mb-0">Pacientes con criterios de riesgo que requieren supervisión.</p>
+        <p class="text-muted mb-0">Pacientes con criterios de riesgo que requieren supervisión obligatoria.</p>
     </div>
     <div class="col-md-4 text-end">
         <a href="{% url 'app:home' %}" class="btn btn-secondary">
@@ -16,10 +16,12 @@
 </div>
 
 <div class="row">
+    
     <div class="col-12 mb-4">
         <div class="card border-danger shadow-sm">
-            <div class="card-header bg-danger text-white">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-heart-pulse"></i> Recién Nacidos en Riesgo</h5>
+                <span class="badge bg-white text-danger rounded-pill">{{ rn_criticos|length }} Casos</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -62,13 +64,23 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    <a href="{% url 'altas:panel_medico' %}" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-arrow-right-short"></i> Ir a Sala
-                                    </a>
+                                    <div class="btn-group shadow-sm">
+                                        <a href="{% url 'altas:panel_medico' %}" class="btn btn-sm btn-outline-primary" title="Gestionar en Sala">
+                                            <i class="bi bi-hospital"></i> Sala
+                                        </a>
+                                        <a href="{% url 'altas:marcar_alerta_revisada' 'rn' rn.pk %}" class="btn btn-sm btn-success" title="Marcar como Revisado">
+                                            <i class="bi bi-check-lg"></i> OK
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="7" class="text-center text-muted py-3">No hay alertas neonatales recientes.</td></tr>
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="bi bi-check-circle display-6 d-block mb-2 text-success"></i>
+                                    No hay alertas neonatales pendientes de revisión.
+                                </td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -79,8 +91,9 @@
 
     <div class="col-12">
         <div class="card border-warning shadow-sm">
-            <div class="card-header bg-warning text-dark">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-activity"></i> Complicaciones en Parto</h5>
+                <span class="badge bg-dark text-warning rounded-pill">{{ partos_complicados|length }} Casos</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -104,13 +117,23 @@
                                 <td>{{ parto.get_tipo_display }}</td>
                                 <td class="text-danger fst-italic">{{ parto.complicaciones }}</td>
                                 <td class="text-end">
-                                    <a href="{% url 'altas:panel_medico' %}" class="btn btn-sm btn-outline-dark">
-                                        <i class="bi bi-arrow-right-short"></i> Ir a Sala
-                                    </a>
+                                    <div class="btn-group shadow-sm">
+                                        <a href="{% url 'altas:panel_medico' %}" class="btn btn-sm btn-outline-dark" title="Gestionar en Sala">
+                                            <i class="bi bi-hospital"></i> Sala
+                                        </a>
+                                        <a href="{% url 'altas:marcar_alerta_revisada' 'parto' parto.pk %}" class="btn btn-sm btn-success" title="Marcar como Revisado">
+                                            <i class="bi bi-check-lg"></i> OK
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="6" class="text-center text-muted py-3">No hay partos con complicaciones recientes.</td></tr>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-check-circle display-6 d-block mb-2 text-success"></i>
+                                    No hay partos con complicaciones pendientes.
+                                </td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>

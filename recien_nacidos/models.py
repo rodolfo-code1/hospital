@@ -43,6 +43,8 @@ class RecienNacido(models.Model):
     examenes_realizados = models.TextField(blank=True, verbose_name="Gases/Exámenes")
     observaciones = models.TextField(blank=True)
     
+    alerta_revisada = models.BooleanField(default=False, verbose_name="Alerta Revisada por Médico")
+
     # Auditoría
     fecha_registro = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)

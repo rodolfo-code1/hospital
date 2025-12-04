@@ -22,4 +22,5 @@ urlpatterns = [
     path('historial/', views.historial_altas, name='historial_altas'),
     path('exportar-excel/', views.exportar_excel, name='exportar_excel'),
     path('certificado/<int:pk>/', views.descargar_certificado, name='descargar_certificado'),
+    path('alertas/revisar/<str:tipo>/<int:pk>/', views.marcar_alerta_revisada, name='marcar_alerta_revisada'),
 ]

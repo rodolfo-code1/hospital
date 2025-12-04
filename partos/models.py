@@ -44,6 +44,8 @@ class Parto(models.Model):
     complicaciones = models.TextField(blank=True, verbose_name="Descripción Complicaciones")
     observaciones = models.TextField(blank=True)
     
+    alerta_revisada = models.BooleanField(default=False, verbose_name="Alerta Revisada por Médico")
+
     # Auditoría
     fecha_registro = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
@@ -64,3 +66,53 @@ class Parto(models.Model):
 
     def tiene_registros_completos(self):
         return all([self.tipo, self.fecha_hora_termino, self.medico_responsable])
+
+# ... (código existente de Parto) ...
+
+class Aborto(models.Model):
+    TIPO_ABORTO = [
+        ('espontaneo', 'Espontáneo / Incompleto'),
+        ('retenido', 'Huevo / Retenido'),
+        ('ive', 'IVE (Ley 21.030)'),
+    ]
+    
+    CAUSALES = [
+        ('na', 'No Aplica (Espontáneo)'),
+        ('causal_1', 'Causal 1: Riesgo vital materno'),
+        ('causal_2', 'Causal 2: Inviabilidad fetal'),
+        ('causal_3', 'Causal 3: Violación'),
+    ]
+
+    ESTADOS = [
+        ('derivado', 'Derivado por Matrona (Pendiente)'),
+        ('confirmado', 'Procedimiento Realizado'),
+        ('descartado', 'Descartado / Falsa Alarma'),
+    ]
+
+    madre = models.ForeignKey(Madre, on_delete=models.CASCADE, related_name='abortos')
+    tipo = models.CharField(max_length=20, choices=TIPO_ABORTO, default='espontaneo')
+    causal = models.CharField(max_length=20, choices=CAUSALES, default='na')
+    
+    fecha_derivacion = models.DateTimeField(auto_now_add=True)
+    matrona_derivadora = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        related_name='abortos_derivados',
+        on_delete=models.SET_NULL, null=True
+    )
+    observacion_matrona = models.TextField(verbose_name="Motivo de Derivación")
+
+    fecha_resolucion = models.DateTimeField(null=True, blank=True)
+    medico_responsable = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        related_name='abortos_resueltos',
+        on_delete=models.SET_NULL, null=True, blank=True
+    )
+    diagnostico_final = models.TextField(blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='derivado')
+
+    class Meta:
+        verbose_name = "Caso Aborto/IVE"
+        verbose_name_plural = "Casos Aborto/IVE"
+
+    def __str__(self):
+        return f"Caso {self.madre.nombre} - {self.get_estado_display()}"

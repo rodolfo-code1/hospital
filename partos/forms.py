@@ -1,11 +1,11 @@
 from django import forms
-from .models import Parto
+from .models import Parto, Aborto
 from usuarios.models import Usuario
 
 class PartoForm(forms.ModelForm):
     """
     Formulario para registrar parto.
-    Incluye validación de lógica de negocio: 1 Parto por Ingreso.
+    Validación Cruzada: Impide registrar parto si ya existe Parto O Aborto en este ingreso.
     """
     class Meta:
         model = Parto
@@ -36,7 +36,7 @@ class PartoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # 1. Carga Dinámica de Profesionales
+        # Carga Dinámica
         medicos = Usuario.objects.filter(rol__in=['medico', 'jefatura']).order_by('first_name')
         opciones_medicos = [('', 'Seleccione Médico...')] + [
             (u.get_full_name() if u.get_full_name().strip() else u.username, 
@@ -54,40 +54,80 @@ class PartoForm(forms.ModelForm):
         self.fields['medico_responsable'].widget.choices = opciones_medicos
         self.fields['matrona_responsable'].widget.choices = opciones_matronas
 
-        # 2. Filtrar Madres: Solo mostrar las que están HOSPITALIZADAS
+        # Solo madres hospitalizadas
         from pacientes.models import Madre
         self.fields['madre'].queryset = Madre.objects.filter(estado_alta='hospitalizado')
 
     def clean_madre(self):
-        """
-        VALIDACIÓN CRÍTICA:
-        1. La madre debe estar 'hospitalizado'.
-        2. No puede tener otro parto registrado DESDE su fecha de ingreso actual.
-        """
+        """VALIDACIÓN: Solo 1 evento (Parto o Aborto) por ingreso."""
         madre = self.cleaned_data.get('madre')
         
-        if not madre:
-            return None
-
-        if not self.instance.pk: # Solo validamos al CREAR un nuevo registro
-            
-            # Regla 1: Estado
+        if not madre: return None
+        
+        # Si es nuevo registro
+        if not self.instance.pk:
+            # 1. Verificar estado
             if madre.estado_alta != 'hospitalizado':
-                raise forms.ValidationError(
-                    f"La paciente {madre.nombre} no figura como hospitalizada. Debe realizar el proceso de Admisión/Reingreso primero."
-                )
+                raise forms.ValidationError(f"Paciente {madre.nombre} no está hospitalizada.")
 
-            # Regla 2: Unicidad en el ingreso actual
-            # Buscamos si existe algún parto registrado DESPUÉS o IGUAL a la fecha de ingreso de la madre
-            parto_existente = Parto.objects.filter(
-                madre=madre,
-                fecha_registro__gte=madre.fecha_ingreso
-            ).exists()
-            
-            if parto_existente:
-                raise forms.ValidationError(
-                    f"La paciente {madre.nombre} ya tiene un parto registrado en este ingreso ({madre.fecha_ingreso.strftime('%d/%m/%Y')}). "
-                    "Si es un nuevo embarazo, debe darla de alta y reingresarla."
-                )
+            # 2. Verificar si ya tiene PARTO
+            if Parto.objects.filter(madre=madre, fecha_registro__gte=madre.fecha_ingreso).exists():
+                raise forms.ValidationError(f"La paciente ya tiene un PARTO registrado en este ingreso.")
+
+            # 3. Verificar si ya tiene ABORTO (Nuevo chequeo cruzado)
+            if Aborto.objects.filter(madre=madre, fecha_derivacion__gte=madre.fecha_ingreso).exists():
+                raise forms.ValidationError(f"La paciente ya tiene un proceso de ABORTO/IVE en curso.")
         
         return madre
+
+
+class DerivacionAbortoForm(forms.ModelForm):
+    """
+    Formulario para derivar a médico (IVE/Aborto).
+    Validación Cruzada: Impide derivar si ya hay parto o aborto.
+    """
+    class Meta:
+        model = Aborto
+        fields = ['madre', 'observacion_matrona']
+        widgets = {
+            'madre': forms.Select(attrs={'class': 'form-select'}),
+            'observacion_matrona': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Describa síntomas o solicitud...'}),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from pacientes.models import Madre
+        self.fields['madre'].queryset = Madre.objects.filter(estado_alta='hospitalizado')
+
+    def clean_madre(self):
+        """VALIDACIÓN: Solo 1 evento (Parto o Aborto) por ingreso."""
+        madre = self.cleaned_data.get('madre')
+        
+        if not madre: return None
+
+        if not self.instance.pk:
+            # 1. Verificar estado
+            if madre.estado_alta != 'hospitalizado':
+                raise forms.ValidationError("Paciente no hospitalizada.")
+
+            # 2. Verificar si ya tiene PARTO (No puedes abortar si ya pariste en este ingreso)
+            if Parto.objects.filter(madre=madre, fecha_registro__gte=madre.fecha_ingreso).exists():
+                raise forms.ValidationError("La paciente ya tiene un PARTO registrado. No corresponde derivación IVE.")
+
+            # 3. Verificar si ya tiene ABORTO
+            if Aborto.objects.filter(madre=madre, fecha_derivacion__gte=madre.fecha_ingreso).exists():
+                raise forms.ValidationError("La paciente ya tiene una derivación de ABORTO/IVE registrada.")
+        
+        return madre
+
+
+class ResolverAbortoForm(forms.ModelForm):
+    """Formulario para el Médico: Resolución"""
+    class Meta:
+        model = Aborto
+        fields = ['tipo', 'causal', 'diagnostico_final']
+        widgets = {
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'causal': forms.Select(attrs={'class': 'form-select'}),
+            'diagnostico_final': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }

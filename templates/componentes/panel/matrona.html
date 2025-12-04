@@ -1,12 +1,11 @@
-
 <div class="col-12"><h5 class="text-secondary border-bottom pb-2"><i class="bi bi-heart-pulse"></i> Gestión Clínica (Matrona)</h5></div>
 
 <div class="col-md-4 col-lg-3">
     <div class="card h-100 shadow-sm border-0 border-top border-primary border-4 hover-shadow">
         <div class="card-body text-center">
             <div class="display-4 text-primary mb-2"><i class="bi bi-clipboard2-pulse"></i></div>
-            <h6 class="card-title fw-bold">Listado Pacientes</h6>
-            <p class="card-text small text-muted">Ver ingresos de recepción y alertas.</p>
+            <h6 class="card-title fw-bold">Pacientes</h6>
+            <p class="card-text small text-muted">Ver ingresos y alertas de recepción.</p>
             <a href="{% url 'pacientes:lista_pacientes' %}" class="btn btn-primary btn-sm w-100 stretched-link">Ver Listado</a>
         </div>
     </div>
@@ -28,8 +27,19 @@
         <div class="card-body text-center">
             <div class="display-4 text-success mb-2"><i class="bi bi-emoji-smile"></i></div>
             <h6 class="card-title fw-bold">Recién Nacido</h6>
-            <p class="card-text small text-muted">Datos APGAR y antropometría.</p>
+            <p class="card-text small text-muted">Datos APGAR, vacunas y antropometría.</p>
             <a href="{% url 'recien_nacidos:registrar_rn' %}" class="btn btn-success btn-sm w-100 stretched-link">Registrar</a>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-4 col-lg-3">
+    <div class="card h-100 shadow-sm border-0 border-top border-danger border-4 hover-shadow bg-danger bg-opacity-10">
+        <div class="card-body text-center">
+            <div class="display-4 text-danger mb-2"><i class="bi bi-exclamation-circle"></i></div>
+            <h6 class="card-title fw-bold text-danger">Derivar Caso IVE</h6>
+            <p class="card-text small text-muted">Solicitud de interrupción o manejo de aborto.</p>
+            <a href="{% url 'partos:derivar_aborto' %}" class="btn btn-outline-danger btn-sm w-100 stretched-link">Crear Solicitud</a>
         </div>
     </div>
 </div>

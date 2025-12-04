@@ -1,4 +1,3 @@
-# hospital/altas/utils.py
 import os
 from django.http import HttpResponse
 from django.conf import settings
@@ -15,11 +14,12 @@ from datetime import datetime
 def generar_certificado_pdf(alta):
     """
     Genera un certificado de alta en formato PDF.
-    Adaptado para altas individuales (Solo Madre, Solo RN o Conjunta).
+    Incluye datos de pacientes, parto y planificación familiar.
     """
-    # Crear respuesta HTTP
+    # Configuración de la respuesta HTTP
     response = HttpResponse(content_type='application/pdf')
-    # Nombre de archivo dinámico según quién se va de alta
+    
+    # Nombre dinámico del archivo
     if alta.madre and alta.recien_nacido:
         sufijo = f"{alta.madre.rut}_RN"
     elif alta.madre:
@@ -37,7 +37,7 @@ def generar_certificado_pdf(alta):
     story = []
     styles = getSampleStyleSheet()
     
-    # Estilos Personalizados
+    # --- ESTILOS PERSONALIZADOS ---
     titulo_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
@@ -58,21 +58,20 @@ def generar_certificado_pdf(alta):
     
     texto_normal = styles['Normal']
     
-    # --- TÍTULO ---
+    # --- ENCABEZADO ---
     story.append(Paragraph("CERTIFICADO DE ALTA HOSPITALARIA", titulo_style))
     story.append(Spacer(1, 0.2 * inch))
     
-    # Texto Introductorio
     intro = f"El Hospital Clínico Herminda Martín certifica que el proceso de alta médica y administrativa ha concluido exitosamente con fecha {alta.fecha_alta.strftime('%d/%m/%Y a las %H:%M')}."
     story.append(Paragraph(intro, texto_normal))
     story.append(Spacer(1, 0.3 * inch))
     
-    # --- SECCIÓN MADRE (Solo si existe) ---
+    # --- SECCIÓN 1: MADRE ---
     if alta.madre:
         story.append(Paragraph("DATOS DE LA MADRE", subtitulo_style))
         
         datos_madre = [
-            ['Nombre:', alta.madre.nombre],
+            ['Nombre Completo:', alta.madre.nombre],
             ['RUT:', alta.madre.rut],
             ['Edad:', f'{alta.madre.edad} años'],
             ['Previsión:', alta.madre.get_prevision_display()],
@@ -92,13 +91,12 @@ def generar_certificado_pdf(alta):
         story.append(tabla_madre)
         story.append(Spacer(1, 0.2 * inch))
 
-    # --- SECCIÓN RECIÉN NACIDO (Solo si existe) ---
+    # --- SECCIÓN 2: RECIÉN NACIDO ---
     if alta.recien_nacido:
         story.append(Paragraph("DATOS DEL RECIÉN NACIDO", subtitulo_style))
         
         datos_rn = [
             ['Código ID:', alta.recien_nacido.codigo_unico],
-            ['Nombre:', alta.recien_nacido.nombre if alta.recien_nacido.nombre else "Recién Nacido"],
             ['Sexo:', alta.recien_nacido.get_sexo_display()],
             ['Peso al Nacer:', f'{alta.recien_nacido.peso} kg'],
             ['Talla:', f'{alta.recien_nacido.talla} cm'],
@@ -118,7 +116,7 @@ def generar_certificado_pdf(alta):
         story.append(tabla_rn)
         story.append(Spacer(1, 0.2 * inch))
 
-    # --- SECCIÓN PARTO (Opcional, solo si está vinculado) ---
+    # --- SECCIÓN 3: PARTO ---
     if alta.parto:
         story.append(Paragraph("ANTECEDENTES DEL PARTO", subtitulo_style))
         
@@ -138,8 +136,31 @@ def generar_certificado_pdf(alta):
         story.append(tabla_parto)
         story.append(Spacer(1, 0.2 * inch))
 
-    # --- RESPONSABLES DEL ALTA ---
-    story.append(Paragraph("RESPONSABLES", subtitulo_style))
+    # --- SECCIÓN 4: PLANIFICACIÓN FAMILIAR (NUEVO) ---
+    # Solo mostramos esta sección si se marcó que se entregó un método
+    if alta.se_entrego_anticonceptivo:
+        story.append(Paragraph("PLANIFICACIÓN FAMILIAR / MAC", subtitulo_style))
+        
+        datos_mac = [
+            ['Método Entregado:', alta.get_metodo_anticonceptivo_display()],
+            ['Estado:', 'Suministrado al alta'],
+        ]
+        
+        tabla_mac = Table(datos_mac, colWidths=[2*inch, 4*inch])
+        tabla_mac.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e6fffa')), # Color suave distintivo
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+        story.append(tabla_mac)
+        story.append(Spacer(1, 0.2 * inch))
+
+    # --- SECCIÓN 5: RESPONSABLES ---
+    story.append(Paragraph("RESPONSABLES DEL ALTA", subtitulo_style))
     
     datos_alta = [
         ['Alta Médica:', alta.medico_confirma or '-'],
@@ -156,7 +177,7 @@ def generar_certificado_pdf(alta):
     story.append(tabla_alta)
     story.append(Spacer(1, 0.5 * inch))
     
-    # Observaciones
+    # Observaciones Finales
     if alta.observaciones:
         story.append(Paragraph("OBSERVACIONES / INDICACIONES", subtitulo_style))
         obs_text = Paragraph(alta.observaciones.replace('\n', '<br/>'), texto_normal)
@@ -187,7 +208,7 @@ def generar_certificado_pdf(alta):
 def exportar_altas_excel(altas):
     """
     Exporta lista de altas a Excel.
-    Actualizado para manejar nulos (Madre/RN opcionales).
+    Incluye columnas de Planificación Familiar.
     """
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -200,7 +221,8 @@ def exportar_altas_excel(altas):
     
     headers = [
         'Folio', 'Tipo Alta', 'RUT Madre', 'Nombre Madre', 
-        'Código RN', 'Sexo RN', 'Peso RN', 
+        'Código RN', 'Sexo RN', 
+        'Entrega MAC', 'Método MAC', # <--- NUEVAS COLUMNAS
         'Médico Resp.', 'Admin Resp.', 'Fecha Alta', 'Estado'
     ]
     
@@ -219,27 +241,31 @@ def exportar_altas_excel(altas):
         if not alta.madre: tipo = "Solo RN"
         if not alta.recien_nacido: tipo = "Solo Madre"
         
-        # Datos seguros (handle None)
+        # Datos seguros
         rut_madre = alta.madre.rut if alta.madre else "-"
         nom_madre = alta.madre.nombre if alta.madre else "-"
         
         cod_rn = alta.recien_nacido.codigo_unico if alta.recien_nacido else "-"
         sexo_rn = alta.recien_nacido.get_sexo_display() if alta.recien_nacido else "-"
-        peso_rn = alta.recien_nacido.peso if alta.recien_nacido else "-"
         
+        # Datos de MAC
+        mac_entregado = "SÍ" if alta.se_entrego_anticonceptivo else "NO"
+        mac_metodo = alta.get_metodo_anticonceptivo_display() if alta.se_entrego_anticonceptivo else "-"
+
         ws.cell(row=row_num, column=1, value=alta.id)
         ws.cell(row=row_num, column=2, value=tipo)
         ws.cell(row=row_num, column=3, value=rut_madre)
         ws.cell(row=row_num, column=4, value=nom_madre)
         ws.cell(row=row_num, column=5, value=cod_rn)
         ws.cell(row=row_num, column=6, value=sexo_rn)
-        ws.cell(row=row_num, column=7, value=peso_rn)
-        ws.cell(row=row_num, column=8, value=alta.medico_confirma or '-')
-        ws.cell(row=row_num, column=9, value=alta.administrativo_confirma or '-')
-        ws.cell(row=row_num, column=10, value=alta.fecha_alta.strftime('%d/%m/%Y %H:%M') if alta.fecha_alta else '-')
-        ws.cell(row=row_num, column=11, value=alta.get_estado_display())
+        ws.cell(row=row_num, column=7, value=mac_entregado)
+        ws.cell(row=row_num, column=8, value=mac_metodo)
+        ws.cell(row=row_num, column=9, value=alta.medico_confirma or '-')
+        ws.cell(row=row_num, column=10, value=alta.administrativo_confirma or '-')
+        ws.cell(row=row_num, column=11, value=alta.fecha_alta.strftime('%d/%m/%Y %H:%M') if alta.fecha_alta else '-')
+        ws.cell(row=row_num, column=12, value=alta.get_estado_display())
     
-    # Ajustar ancho
+    # Ajustar ancho columnas
     for col in ws.columns:
         max_length = 0
         column = col[0].column_letter

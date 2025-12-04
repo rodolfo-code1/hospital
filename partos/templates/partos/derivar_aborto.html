@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger shadow">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="bi bi-exclamation-circle"></i> Derivar Caso Clínico (Posible Aborto/IVE)</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning small">
+                    Esta acción notificará al médico de turno para evaluación y resolución.
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.madre.label_tag }}
+                        {{ form.madre }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.observacion_matrona.label_tag }}
+                        {{ form.observacion_matrona }}
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">Enviar Derivación</button>
+                        <a href="{% url 'app:home' %}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

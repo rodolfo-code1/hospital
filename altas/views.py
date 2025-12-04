@@ -175,36 +175,37 @@ def detalle_alta(request, pk):
 @login_required
 @medico_requerido
 def confirmar_alta_clinica(request, pk):
+    """Confirma alta clínica y guarda datos de anticoncepción."""
     alta = get_object_or_404(Alta, pk=pk)
     
     if not alta.puede_confirmar_alta_clinica():
         messages.error(request, 'No se puede confirmar. Verifique registros.')
         return redirect('altas:detalle_alta', pk=pk)
     
-    # Obtenemos el nombre completo del usuario logueado
     nombre_medico_actual = request.user.get_full_name() or request.user.username
     
     if request.method == 'POST':
         form = ConfirmarAltaClinicaForm(request.POST)
         if form.is_valid():
-            # Aunque el form traiga el dato, por seguridad forzamos el usuario actual
+            # 1. Confirmar Alta
             alta.confirmar_alta_clinica(nombre_medico_actual)
             
+            # 2. Guardar datos de Anticoncepción
+            alta.se_entrego_anticonceptivo = form.cleaned_data.get('se_entrego_anticonceptivo')
+            alta.metodo_anticonceptivo = form.cleaned_data.get('metodo_anticonceptivo')
+            
+            # 3. Guardar Observaciones
             if form.cleaned_data.get('observaciones_clinicas'):
-                alta.observaciones += f"\n[Alta Clínica - {nombre_medico_actual}]: {form.cleaned_data['observaciones_clinicas']}"
-                alta.save()
-                
+                alta.observaciones += f"\n[Médico {nombre_medico_actual}]: {form.cleaned_data['observaciones_clinicas']}"
+            
+            alta.save()
+            
             messages.success(request, f'Alta clínica firmada exitosamente por {nombre_medico_actual}.')
             return redirect('altas:detalle_alta', pk=pk)
     else:
-        # AQUÍ ESTÁ LA MEJORA: Pre-llenamos el formulario con el nombre
         form = ConfirmarAltaClinicaForm(initial={'medico_nombre': nombre_medico_actual})
     
-    return render(request, 'altas/confirmar_alta.html', {
-        'alta': alta, 
-        'form': form, 
-        'tipo_confirmacion': 'clínica'
-    })
+    return render(request, 'altas/confirmar_alta.html', {'alta': alta, 'form': form, 'tipo_confirmacion': 'clínica'})
 @login_required
 @rol_requerido('administrativo')
 def confirmar_alta_administrativa(request, pk):
@@ -288,15 +289,34 @@ def descargar_certificado(request, pk):
 
 @login_required
 @medico_requerido
+def marcar_alerta_revisada(request, tipo, pk):
+    """Marca una alerta como revisada para que deje de sumar en el contador."""
+    if tipo == 'parto':
+        obj = get_object_or_404(Parto, pk=pk)
+    elif tipo == 'rn':
+        obj = get_object_or_404(RecienNacido, pk=pk)
+    
+    obj.alerta_revisada = True
+    obj.save()
+    
+    messages.success(request, 'Alerta marcada como revisada.')
+    return redirect('altas:alertas_clinicas')
+
+# --- ACTUALIZAR TAMBIÉN LA VISTA DE ALERTAS ---
+@login_required
+@medico_requerido
 def alertas_clinicas(request):
-    """Vista de alertas para el médico"""
+    """Vista de alertas (Solo muestra las NO revisadas)"""
     rn_criticos = RecienNacido.objects.filter(
+        alerta_revisada=False  # <--- FILTRO NUEVO
+    ).filter(
         Q(apgar_1_min__lt=7) | Q(apgar_5_min__lt=7) | Q(peso__lt=2.5) | Q(peso__gt=4.0)
-    ).select_related('parto', 'parto__madre').order_by('-fecha_registro')[:20]
+    ).select_related('parto', 'parto__madre').order_by('-fecha_registro')
 
     partos_complicados = Parto.objects.filter(
-        tuvo_complicaciones=True
-    ).select_related('madre').order_by('-fecha_hora_inicio')[:20]
+        tuvo_complicaciones=True,
+        alerta_revisada=False  # <--- FILTRO NUEVO
+    ).select_related('madre').order_by('-fecha_hora_inicio')
 
     return render(request, 'altas/alertas_clinicas.html', {
         'rn_criticos': rn_criticos,
