@@ -33,6 +33,8 @@ class PartoForm(forms.ModelForm):
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
+
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
@@ -131,3 +133,16 @@ class ResolverAbortoForm(forms.ModelForm):
             'causal': forms.Select(attrs={'class': 'form-select'}),
             'diagnostico_final': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+
+class FiltroTurnoForm(forms.Form):
+    fecha = forms.DateField(
+        required=False, 
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label="Seleccionar Fecha"
+    )
+    turno = forms.ChoiceField(
+        choices=[('dia', 'Día (08:00 - 20:00)'), ('noche', 'Noche (20:00 - 08:00)')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Tipo de Turno"
+    )

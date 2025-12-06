@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Turno - Historial de Gestión{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-end">
+    <div class="col-lg-6">
+        <h2 class="text-primary mb-1">
+            <i class="bi bi-journal-bookmark-fill"></i> Mi Gestión Diaria
+        </h2>
+        <p class="text-muted mb-0">
+            Revisando turno: 
+            <strong class="text-dark">{{ fecha_actual|date:"d M Y" }}</strong> - 
+            <span class="badge {% if nombre_turno == 'Día' %}bg-warning text-dark{% else %}bg-dark{% endif %}">
+                {{ nombre_turno }}
+            </span>
+            <small class="d-block mt-1">({{ inicio_turno|date:"H:i" }} a {{ fin_turno|date:"H:i" }})</small>
+        </p>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card bg-light border-0 shadow-sm">
+            <div class="card-body p-2">
+                <form method="get" class="row g-2 align-items-end">
+                    <div class="col-5">
+                        <label class="form-label small fw-bold text-muted mb-1">Fecha</label>
+                        {{ form_filtro.fecha }}
+                    </div>
+                    <div class="col-5">
+                        <label class="form-label small fw-bold text-muted mb-1">Turno</label>
+                        {{ form_filtro.turno }}
+                    </div>
+                    <div class="col-2">
+                        <button type="submit" class="btn btn-primary w-100" title="Buscar">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card bg-primary text-white h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-3">
+                <h3 class="mb-0 fw-bold">{{ stats.total_madres }}</h3>
+                <small class="text-white-50">Ingresos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-success text-white h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-3">
+                <h3 class="mb-0 fw-bold">{{ stats.total_partos }}</h3>
+                <small class="text-white-50">Partos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-info text-dark h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-3">
+                <h3 class="mb-0 fw-bold">{{ stats.total_rns }}</h3>
+                <small class="text-dark-50">Recién Nacidos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card bg-danger text-white h-100 border-0 shadow-sm">
+            <div class="card-body text-center p-3">
+                <h3 class="mb-0 fw-bold">{{ stats.total_abortos }}</h3>
+                <small class="text-white-50">Deriv. IVE</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow border-0">
+    <div class="card-header bg-white border-bottom-0">
+        <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#madres" type="button">
+                    <i class="bi bi-person-lines-fill"></i> Ingresos
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#partos" type="button">
+                    <i class="bi bi-activity"></i> Partos
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#rns" type="button">
+                    <i class="bi bi-emoji-smile"></i> RN
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link text-danger" data-bs-toggle="tab" data-bs-target="#abortos" type="button">
+                    <i class="bi bi-exclamation-circle"></i> IVE
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="card-body">
+        <div class="tab-content" id="myTabContent">
+            
+            <div class="tab-pane fade show active" id="madres">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light"><tr><th>Hora</th><th>Paciente</th><th>RUT</th><th>Previsión</th><th>Acción</th></tr></thead>
+                        <tbody>
+                            {% for m in madres %}
+                            <tr>
+                                <td>{{ m.fecha_ingreso|date:"H:i" }}</td>
+                                <td class="fw-bold">{{ m.nombre }}</td>
+                                <td>{{ m.rut }}</td>
+                                <td>{{ m.get_prevision_display }}</td>
+                                <td>
+                                    <a href="{% url 'pacientes:completar_madre' m.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> Ver</a>
+                                </td>
+                            </tr>
+                            {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Sin ingresos registrados en este periodo.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="partos">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light"><tr><th>Hora</th><th>Madre</th><th>Tipo</th><th>Médico</th><th>Complicación</th></tr></thead>
+                        <tbody>
+                            {% for p in partos %}
+                            <tr>
+                                <td>{{ p.fecha_registro|date:"H:i" }}</td>
+                                <td>{{ p.madre.nombre }}</td>
+                                <td>{{ p.get_tipo_display }}</td>
+                                <td>{{ p.medico_responsable }}</td>
+                                <td>{% if p.tuvo_complicaciones %}<span class="badge bg-warning text-dark">SÍ</span>{% else %}<span class="badge bg-success">NO</span>{% endif %}</td>
+                            </tr>
+                            {% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Sin partos registrados.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="rns">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light"><tr><th>Hora</th><th>Código</th><th>Madre</th><th>Sexo</th><th>Peso</th><th>APGAR 1'</th></tr></thead>
+                        <tbody>
+                            {% for r in rns %}
+                            <tr>
+                                <td>{{ r.fecha_registro|date:"H:i" }}</td>
+                                <td class="fw-bold text-primary">{{ r.codigo_unico }}</td>
+                                <td>{{ r.parto.madre.nombre }}</td>
+                                <td>{{ r.get_sexo_display }}</td>
+                                <td>{{ r.peso }} kg</td>
+                                <td><span class="badge {% if r.apgar_1_min < 7 %}bg-danger{% else %}bg-success{% endif %}">{{ r.apgar_1_min }}</span></td>
+                            </tr>
+                            {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Sin recién nacidos registrados.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="abortos">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light"><tr><th>Hora</th><th>Paciente</th><th>Motivo</th><th>Estado</th></tr></thead>
+                        <tbody>
+                            {% for a in abortos %}
+                            <tr>
+                                <td>{{ a.fecha_derivacion|date:"H:i" }}</td>
+                                <td class="fw-bold">{{ a.madre.nombre }}</td>
+                                <td class="text-danger">{{ a.observacion_matrona|truncatechars:40 }}</td>
+                                <td>
+                                    {% if a.estado == 'derivado' %}<span class="badge bg-warning text-dark">Pendiente</span>
+                                    {% elif a.estado == 'confirmado' %}<span class="badge bg-success">Resuelto</span>
+                                    {% else %}<span class="badge bg-secondary">{{ a.get_estado_display }}</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}<tr><td colspan="4" class="text-center text-muted py-4">Sin derivaciones registradas.</td></tr>{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="mt-4 text-center">
+    <a href="{% url 'app:home' %}" class="btn btn-secondary px-4"><i class="bi bi-house"></i> Volver al Inicio</a>
+</div>
+{% endblock %}

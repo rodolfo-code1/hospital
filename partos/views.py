@@ -2,10 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from datetime import timedelta
 from .models import Parto, Aborto
-from .forms import PartoForm, DerivacionAbortoForm, ResolverAbortoForm
+from pacientes.models import Madre
+from recien_nacidos.models import RecienNacido
+from .forms import PartoForm, DerivacionAbortoForm, ResolverAbortoForm, FiltroTurnoForm
 from usuarios.decorators import rol_requerido, medico_requerido
-
 # ==========================================
 # GESTIÓN DE PARTOS (MATRONA)
 # ==========================================
@@ -47,21 +49,91 @@ def registrar_parto(request):
 @rol_requerido('matrona')
 def mis_registros_clinicos(request):
     """
-    Vista exclusiva para Matronas: Muestra SOLO sus registros.
+    Panel de Turno: Muestra registros por usuario, fecha y turno específico.
+    Permite navegar al pasado.
     """
-    registros = Parto.objects.filter(creado_por=request.user).select_related('madre').order_by('-fecha_registro')
+    # Valores por defecto (Ahora)
+    ahora = timezone.localtime(timezone.now())
+    fecha_seleccionada = ahora.date()
+    
+    # Determinar turno actual por defecto
+    if 8 <= ahora.hour < 20:
+        turno_seleccionado = 'dia'
+    else:
+        turno_seleccionado = 'noche'
+        # Si es madrugada (00:00 - 08:00), el turno pertenece a la fecha de "ayer"
+        if ahora.hour < 8:
+            fecha_seleccionada = ahora.date() - timedelta(days=1)
 
-    fecha_busqueda = request.GET.get('fecha')
-    if fecha_busqueda:
-        registros = registros.filter(fecha_registro__date=fecha_busqueda)
+    # Procesar formulario de filtro si viene en la URL (GET)
+    form_filtro = FiltroTurnoForm(request.GET or None)
+    
+    if form_filtro.is_valid():
+        if form_filtro.cleaned_data['fecha']:
+            fecha_seleccionada = form_filtro.cleaned_data['fecha']
+        if form_filtro.cleaned_data['turno']:
+            turno_seleccionado = form_filtro.cleaned_data['turno']
+    else:
+        # Pre-llenar formulario con los defaults calculados
+        form_filtro = FiltroTurnoForm(initial={'fecha': fecha_seleccionada, 'turno': turno_seleccionado})
+
+    # Calcular rangos exactos según la selección
+    # Usamos la fecha seleccionada como base
+    base_time = timezone.datetime.combine(fecha_seleccionada, timezone.datetime.min.time())
+    base_time = timezone.make_aware(base_time)
+
+    if turno_seleccionado == 'dia':
+        inicio_turno = base_time.replace(hour=8, minute=0)
+        fin_turno = base_time.replace(hour=20, minute=0)
+        nombre_turno = "Día"
+    else: # Noche
+        inicio_turno = base_time.replace(hour=20, minute=0)
+        # El turno noche termina al día siguiente
+        fin_turno = (base_time + timedelta(days=1)).replace(hour=8, minute=0)
+        nombre_turno = "Noche"
+
+    # Consultas filtradas
+    madres = Madre.objects.filter(
+        creado_por=request.user,
+        fecha_ingreso__range=(inicio_turno, fin_turno)
+    ).order_by('-fecha_ingreso')
+
+    partos = Parto.objects.filter(
+        creado_por=request.user,
+        fecha_registro__range=(inicio_turno, fin_turno)
+    ).select_related('madre').order_by('-fecha_registro')
+
+    rns = RecienNacido.objects.filter(
+        creado_por=request.user,
+        fecha_registro__range=(inicio_turno, fin_turno)
+    ).select_related('parto__madre').order_by('-fecha_registro')
+
+    abortos = Aborto.objects.filter(
+        matrona_derivadora=request.user,
+        fecha_derivacion__range=(inicio_turno, fin_turno)
+    ).select_related('madre').order_by('-fecha_derivacion')
+
+    stats = {
+        'total_madres': madres.count(),
+        'total_partos': partos.count(),
+        'total_rns': rns.count(),
+        'total_abortos': abortos.count(),
+    }
 
     context = {
-        'registros': registros,
-        'fecha_busqueda': fecha_busqueda
+        'form_filtro': form_filtro, # Enviamos el form a la plantilla
+        'nombre_turno': nombre_turno,
+        'fecha_actual': fecha_seleccionada,
+        'inicio_turno': inicio_turno,
+        'fin_turno': fin_turno,
+        'madres': madres,
+        'partos': partos,
+        'rns': rns,
+        'abortos': abortos,
+        'stats': stats
     }
-    return render(request, 'partos/mis_registros.html', context)
-
-
+    
+    return render(request, 'partos/mi_turno.html', context)
 # ==========================================
 # GESTIÓN DE ABORTOS / IVE
 # ==========================================
