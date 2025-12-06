@@ -21,11 +21,19 @@ def get_client_ip(request: HttpRequest):
 def registrar_login(request, usuario, exitoso=True, razon_fallo=''):
     """Registra el intento de login en la auditoría"""
     try:
+        # Asegurar que la sesión tenga session_key (si ya existe)
+        session_key = None
+        try:
+            session_key = request.session.session_key
+        except Exception:
+            session_key = None
+
         AuditoriaLogin.objects.create(
             usuario=usuario,
             tipo_evento='login' if exitoso else 'login_fallido',
             direccion_ip=get_client_ip(request),
             user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+            session_key=session_key,
             nombre_usuario=usuario.username if usuario else request.POST.get('username', ''),
             exitoso=exitoso,
             razon_fallo=razon_fallo
@@ -37,11 +45,18 @@ def registrar_logout(request):
     """Registra el logout en la auditoría"""
     try:
         if request.user.is_authenticated:
+            session_key = None
+            try:
+                session_key = request.session.session_key
+            except Exception:
+                session_key = None
+
             AuditoriaLogin.objects.create(
                 usuario=request.user,
                 tipo_evento='logout',
                 direccion_ip=get_client_ip(request),
                 user_agent=request.META.get('HTTP_USER_AGENT', '')[:500],
+                session_key=session_key,
                 exitoso=True
             )
     except Exception as e:

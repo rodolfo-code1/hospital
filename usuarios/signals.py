@@ -52,6 +52,15 @@ def registrar_creacion_modificacion(sender, instance, created, **kwargs):
         if hasattr(instance, '__str__'):
             descripcion += f": {str(instance)[:100]}"
         
+        # Intentar obtener la session_key desde request si existe
+        session_key = None
+        try:
+            request = getattr(_thread_locals, 'request', None)
+            if request and hasattr(request, 'session'):
+                session_key = request.session.session_key
+        except Exception:
+            session_key = None
+
         # Crear registro de auditoría
         AuditoriaModificacion.objects.create(
             usuario=usuario,
@@ -62,7 +71,8 @@ def registrar_creacion_modificacion(sender, instance, created, **kwargs):
             valores_nuevos={
                 'id': instance.pk,
                 'modelo': sender.__name__,
-            }
+            },
+            session_key=session_key
         )
     except Exception as e:
         logger.error(f"Error registrando auditoría de modificación: {str(e)}")
@@ -88,6 +98,15 @@ def registrar_eliminacion(sender, instance, **kwargs):
         # Preparar descripción
         descripcion = f"{sender.__name__} eliminado: {str(instance)[:100]}"
         
+        # Intentar obtener la session_key desde request si existe
+        session_key = None
+        try:
+            request = getattr(_thread_locals, 'request', None)
+            if request and hasattr(request, 'session'):
+                session_key = request.session.session_key
+        except Exception:
+            session_key = None
+
         # Crear registro de auditoría
         AuditoriaModificacion.objects.create(
             usuario=usuario,
@@ -95,6 +114,7 @@ def registrar_eliminacion(sender, instance, **kwargs):
             modelo=sender.__name__,
             id_objeto=instance.pk if instance.pk else 0,
             descripcion=descripcion,
+            session_key=session_key,
         )
     except Exception as e:
         logger.error(f"Error registrando auditoría de eliminación: {str(e)}")

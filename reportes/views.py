@@ -258,24 +258,24 @@ def metricas_generales(request):
 @supervisor_requerido
 def auditoria_view(request):
     """Vista de auditoría completa"""
-    # Auditoría de logins
-    auditorias_login = AuditoriaLogin.objects.all().select_related('usuario')[:100]
-    
-    # Auditoría de modificaciones
-    auditorias_modificacion = AuditoriaModificacion.objects.all().select_related('usuario')[:100]
-    
     # Filtros
     tipo_auditoria = request.GET.get('tipo', 'login')  # login o modificacion
     usuario_id = request.GET.get('usuario')
+    session_key = request.GET.get('session_key')
     
+    # Aplicar filtros ANTES de slice
     if tipo_auditoria == 'modificacion':
-        auditorias = auditorias_modificacion
+        auditorias = AuditoriaModificacion.objects.all().select_related('usuario')
         if usuario_id:
             auditorias = auditorias.filter(usuario_id=usuario_id)
+        if session_key:
+            auditorias = auditorias.filter(session_key=session_key)
     else:
-        auditorias = auditorias_login
+        auditorias = AuditoriaLogin.objects.all().select_related('usuario')
         if usuario_id:
             auditorias = auditorias.filter(usuario_id=usuario_id)
+        if session_key:
+            auditorias = auditorias.filter(session_key=session_key)
     
     # Estadísticas
     total_logins = AuditoriaLogin.objects.filter(exitoso=True).count()
@@ -284,6 +284,7 @@ def auditoria_view(request):
     
     context = {
         'auditorias': auditorias[:100],
+        'session_key': session_key,
         'tipo_auditoria': tipo_auditoria,
         'total_logins': total_logins,
         'total_logins_fallidos': total_logins_fallidos,

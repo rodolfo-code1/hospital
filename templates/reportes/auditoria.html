@@ -118,6 +118,9 @@
                                                     <br><small class="text-danger">{{ auditoria.razon_fallo }}</small>
                                                 {% endif %}
                                             {% endif %}
+                                            {% if auditoria.session_key %}
+                                                <br><a href="?tipo=modificacion&session_key={{ auditoria.session_key }}" class="small">Ver cambios de esta sesión</a>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                     {% empty %}

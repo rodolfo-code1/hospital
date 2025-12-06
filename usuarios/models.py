@@ -73,6 +73,7 @@ class AuditoriaLogin(models.Model):
     fecha_evento = models.DateTimeField(auto_now_add=True)
     direccion_ip = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True, verbose_name="Navegador/Dispositivo")
+    session_key = models.CharField(max_length=40, blank=True, null=True)
     nombre_usuario = models.CharField(max_length=150, blank=True, verbose_name="Nombre Usuario Intentado")
     exitoso = models.BooleanField(default=True)
     razon_fallo = models.CharField(max_length=255, blank=True)
@@ -113,6 +114,7 @@ class AuditoriaModificacion(models.Model):
     descripcion = models.TextField(verbose_name="Descripción del Cambio", blank=True)
     valores_anteriores = models.JSONField(default=dict, blank=True)
     valores_nuevos = models.JSONField(default=dict, blank=True)
+    session_key = models.CharField(max_length=40, blank=True, null=True)
     
     class Meta:
         verbose_name = "Auditoría Modificación"
