@@ -197,6 +197,9 @@ def reporte_seccion_d(request):
 @supervisor_requerido
 def metricas_generales(request):
     """Métricas generales del sistema"""
+    from django.db.models.functions import TruncDate
+    import json
+    
     # Rango de fechas
     fecha_inicio = request.GET.get('fecha_inicio')
     fecha_fin = request.GET.get('fecha_fin')
@@ -204,8 +207,13 @@ def metricas_generales(request):
     # Por defecto: últimos 30 días
     if not fecha_inicio:
         fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = timezone.datetime.fromisoformat(fecha_inicio).date()
+    
     if not fecha_fin:
         fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = timezone.datetime.fromisoformat(fecha_fin).date()
     
     # Partos
     partos = Parto.objects.filter(fecha_hora_inicio__date__range=[fecha_inicio, fecha_fin])
@@ -235,8 +243,51 @@ def metricas_generales(request):
     razon_rn_parto = round((total_rn / total_partos) if total_partos > 0 else 0, 2)
     tasa_aborto = round((total_abortos / (total_partos + total_abortos) * 100) if (total_partos + total_abortos) > 0 else 0, 1)
     porcentaje_altas = round((total_altas_madre / total_partos * 100) if total_partos > 0 else 0, 1)
-    dias_periodo = (timezone.now().date() - fecha_inicio).days + 1
+    dias_periodo = (fecha_fin - fecha_inicio).days + 1
     promedio_rn_dia = round((total_rn / dias_periodo) if dias_periodo > 0 else 0, 1)
+    
+    # === DATOS PARA GRÁFICOS ===
+    
+    # 1. Gráfico de distribución: Partos, RN, Altas, Abortos
+    datos_distribucion = {
+        'labels': ['Partos', 'Recién Nacidos', 'Altas Madres', 'Altas RN', 'Abortos'],
+        'values': [total_partos, total_rn, total_altas_madre, total_altas_rn, total_abortos],
+        'colors': ['#0d6efd', '#198754', '#0dcaf0', '#ffc107', '#dc3545']
+    }
+    
+    # 2. Evolución diaria de RN (últimos 30 días)
+    fecha_inicio_grafico = max(fecha_inicio, (timezone.now() - timedelta(days=30)).date())
+    rn_diarios = RecienNacido.objects.filter(
+        fecha_registro__date__range=[fecha_inicio_grafico, fecha_fin]
+    ).values('fecha_registro__date').annotate(count=Count('id')).order_by('fecha_registro__date')
+    
+    # Crear diccionario de fechas con conteos
+    fechas_dict = {item['fecha_registro__date']: item['count'] for item in rn_diarios}
+    
+    # Generar todas las fechas del rango
+    fechas_all = []
+    fecha_actual = fecha_inicio_grafico
+    while fecha_actual <= fecha_fin:
+        fechas_all.append(fecha_actual)
+        fecha_actual += timedelta(days=1)
+    
+    # Contar RN por día (rellenar con 0 si no hay datos)
+    rn_counts = [fechas_dict.get(fecha, 0) for fecha in fechas_all]
+    
+    datos_evolucion = {
+        'labels': [fecha.strftime('%d/%m') for fecha in fechas_all],
+        'values': rn_counts,
+    }
+    
+    # 3. Tipos de partos (si existen datos)
+    tipos_partos = list(partos.values('tipo').annotate(count=Count('id')))
+    for tp in tipos_partos:
+        tp['porcentaje'] = round((tp['count'] / total_partos * 100) if total_partos > 0 else 0, 1)
+    
+    datos_tipos_partos = {
+        'labels': [tp['tipo'] if tp['tipo'] else 'Sin especificar' for tp in tipos_partos],
+        'values': [tp['count'] for tp in tipos_partos],
+    }
     
     context = {
         'total_partos': total_partos,
@@ -250,6 +301,10 @@ def metricas_generales(request):
         'tasa_aborto': tasa_aborto,
         'porcentaje_altas': porcentaje_altas,
         'promedio_rn_dia': promedio_rn_dia,
+        # Datos para gráficos
+        'datos_distribucion_json': json.dumps(datos_distribucion),
+        'datos_evolucion_json': json.dumps(datos_evolucion),
+        'datos_tipos_partos_json': json.dumps(datos_tipos_partos),
     }
     
     return render(request, 'reportes/metricas_generales.html', context)
