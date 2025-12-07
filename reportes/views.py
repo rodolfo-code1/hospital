@@ -3,11 +3,18 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q, Count, Sum, Avg
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime
 from partos.models import Parto, Aborto
 from recien_nacidos.models import RecienNacido
 from altas.models import Alta
 from usuarios.models import AuditoriaLogin, AuditoriaModificacion
+from .excel_export import (
+    crear_libro_excel_seccion_a,
+    crear_libro_excel_seccion_b,
+    crear_libro_excel_seccion_c,
+    crear_libro_excel_seccion_d,
+    descargar_excel_response
+)
 from usuarios.decorators import supervisor_requerido
 
 # ==========================================
@@ -347,3 +354,99 @@ def auditoria_view(request):
     }
     
     return render(request, 'reportes/auditoria.html', context)
+
+
+# ==========================================
+# DESCARGAS EXCEL DE REPORTES REM
+# ==========================================
+
+@login_required
+@supervisor_requerido
+def descargar_excel_seccion_a(request):
+    """Descargar Excel de Sección A"""
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    # Manejar valores None o strings 'None'
+    if not fecha_inicio or fecha_inicio == 'None':
+        fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = datetime.fromisoformat(fecha_inicio).date()
+    
+    if not fecha_fin or fecha_fin == 'None':
+        fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = datetime.fromisoformat(fecha_fin).date()
+    
+    wb = crear_libro_excel_seccion_a(fecha_inicio, fecha_fin)
+    nombre = f"Seccion_A_Partos_{fecha_inicio}_{fecha_fin}.xlsx"
+    return descargar_excel_response(wb, nombre)
+
+
+@login_required
+@supervisor_requerido
+def descargar_excel_seccion_b(request):
+    """Descargar Excel de Sección B"""
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    # Manejar valores None o strings 'None'
+    if not fecha_inicio or fecha_inicio == 'None':
+        fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = datetime.fromisoformat(fecha_inicio).date()
+    
+    if not fecha_fin or fecha_fin == 'None':
+        fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = datetime.fromisoformat(fecha_fin).date()
+    
+    wb = crear_libro_excel_seccion_b(fecha_inicio, fecha_fin)
+    nombre = f"Seccion_B_Abortos_{fecha_inicio}_{fecha_fin}.xlsx"
+    return descargar_excel_response(wb, nombre)
+
+
+@login_required
+@supervisor_requerido
+def descargar_excel_seccion_c(request):
+    """Descargar Excel de Sección C"""
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    # Manejar valores None o strings 'None'
+    if not fecha_inicio or fecha_inicio == 'None':
+        fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = datetime.fromisoformat(fecha_inicio).date()
+    
+    if not fecha_fin or fecha_fin == 'None':
+        fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = datetime.fromisoformat(fecha_fin).date()
+    
+    wb = crear_libro_excel_seccion_c(fecha_inicio, fecha_fin)
+    nombre = f"Seccion_C_Anticonceptivos_{fecha_inicio}_{fecha_fin}.xlsx"
+    return descargar_excel_response(wb, nombre)
+
+
+@login_required
+@supervisor_requerido
+def descargar_excel_seccion_d(request):
+    """Descargar Excel de Sección D"""
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    # Manejar valores None o strings 'None'
+    if not fecha_inicio or fecha_inicio == 'None':
+        fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = datetime.fromisoformat(fecha_inicio).date()
+    
+    if not fecha_fin or fecha_fin == 'None':
+        fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = datetime.fromisoformat(fecha_fin).date()
+    
+    wb = crear_libro_excel_seccion_d(fecha_inicio, fecha_fin)
+    nombre = f"Seccion_D_RecienNacidos_{fecha_inicio}_{fecha_fin}.xlsx"
+    return descargar_excel_response(wb, nombre)

@@ -22,8 +22,13 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Filtros</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'reportes:descargar_seccion_c' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" class="btn btn-success" title="Descargar Sección C">
+                            <i class="bi bi-file-earmark-excel"></i> Descargar Excel
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     <form method="GET" class="row g-3">
