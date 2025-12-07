@@ -154,10 +154,13 @@
                             <a href="{% url 'altas:detalle_alta' alta.pk %}" class="btn btn-sm btn-primary">
                                 <i class="bi bi-eye"></i> Ver
                             </a>
+                            
                             {% if alta.esta_completada %}
-                                <a href="{% url 'altas:descargar_certificado' alta.pk %}" class="btn btn-sm btn-danger" target="_blank">
-                                    <i class="bi bi-file-pdf"></i>
-                                </a>
+                                {% if user.rol != 'medico' %}
+                                    <a href="{% url 'altas:descargar_certificado' alta.pk %}" class="btn btn-sm btn-danger" target="_blank" title="Descargar Certificado">
+                                        <i class="bi bi-file-pdf"></i>
+                                    </a>
+                                {% endif %}
                             {% endif %}
                         </td>
                     </tr>

@@ -2,12 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from datetime import timedelta
 from .models import Parto, Aborto
-from pacientes.models import Madre
-from recien_nacidos.models import RecienNacido
-from .forms import PartoForm, DerivacionAbortoForm, ResolverAbortoForm, FiltroTurnoForm
+from .forms import PartoForm, DerivacionAbortoForm, ResolverAbortoForm
 from usuarios.decorators import rol_requerido, medico_requerido
+from usuarios.models import Usuario
+from app.models import Notificacion
 # ==========================================
 # GESTIÓN DE PARTOS (MATRONA)
 # ==========================================
@@ -149,15 +148,31 @@ def derivar_aborto(request):
             caso.matrona_derivadora = request.user
             caso.save()
             
-            # Cambiar estado salud de madre a Observación automáticamente
+            # 1. Cambiar estado salud de madre a Observación (Bloqueo preventivo)
             caso.madre.estado_salud = 'observacion'
             caso.madre.save()
             
-            messages.warning(request, f'Caso derivado al equipo médico. Paciente: {caso.madre.nombre}')
+            # --- 2. NOTIFICAR URGENTE A MÉDICOS ---
+            medicos = Usuario.objects.filter(rol__in=['medico', 'jefatura'])
+            notificaciones = []
+            
+            mensaje_alerta = f"Paciente: {caso.madre.nombre} ({caso.madre.rut})\nMotivo: {caso.observacion_matrona}"
+            
+            for medico in medicos:
+                notificaciones.append(Notificacion(
+                    usuario=medico,
+                    titulo="🚨 DERIVACIÓN URGENTE: IVE/ABORTO",
+                    mensaje=mensaje_alerta,
+                    tipo='urgente', # Esto lo pone en rojo en el dashboard
+                    link=f"/partos/resolver-ive/{caso.pk}/" # Link directo a resolver
+                ))
+            
+            Notificacion.objects.bulk_create(notificaciones)
+            # --------------------------------------
+            
+            messages.warning(request, f'Caso derivado. Se ha enviado una ALERTA a todo el equipo médico.')
             return redirect('app:home')
         else:
-            # --- NUEVO: NOTIFICACIÓN DE ERROR DE BLOQUEO ---
-            # Si clean_madre falla (ya tiene parto o aborto), avisa fuerte a la matrona
             if 'madre' in form.errors:
                 messages.error(request, f"⛔ NO SE PUEDE DERIVAR: {form.errors['madre'][0]}")
             else:
@@ -181,7 +196,6 @@ def panel_abortos(request):
 def resolver_aborto(request, pk):
     """
     Médico confirma el diagnóstico y procedimiento.
-    Al terminar, redirige al PANEL PRINCIPAL.
     """
     caso = get_object_or_404(Aborto, pk=pk)
     
@@ -194,13 +208,11 @@ def resolver_aborto(request, pk):
             caso.estado = 'confirmado'
             caso.save()
             
-            # La paciente queda en observación para evaluación posterior en sala
-            caso.madre.estado_salud = 'observacion'
+            # Dejar en OBSERVACIÓN para evaluación en sala
+            caso.madre.estado_salud = 'observacion' 
             caso.madre.save()
             
-            messages.success(request, 'Procedimiento registrado. Paciente derivada a Sala de Hospitalización (Observación).')
-            
-            # Volver al Panel Principal
+            messages.success(request, 'Procedimiento registrado. Paciente derivada a Sala de Hospitalización.')
             return redirect('app:home')
     else:
         form = ResolverAbortoForm(instance=caso)
