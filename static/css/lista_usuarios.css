@@ -1,0 +1,78 @@
+.gestion-usuarios {
+    max-width: 1200px;
+    margin-inline: auto;
+}
+
+.text-primary-hcm {
+    color: #01224f;
+}
+
+.table-card {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,.06);
+}
+
+.table-hcm {
+    background: rgba(20,135,149,.1);
+    color: #01224f;
+    border-bottom: 1px solid rgba(0,0,0,.08);
+}
+
+.table-hcm th {
+    font-weight: 600;
+    padding: .85rem .75rem;
+}
+
+.table-hover tbody tr:hover {
+    background: rgba(20,135,149,.07);
+}
+
+.badge {
+    border-radius: 8px;
+    font-size: .83rem;
+    font-weight: 600;
+}
+
+.btn-new-user {
+    background: #148795;
+    color: #fff;
+    border-radius: 8px;
+    padding: .6rem 1.2rem;
+    font-weight: 600;
+    border: none;
+    transition: .25s ease;
+}
+
+.btn-new-user:hover {
+    background: #0fb8ae;
+    transform: translateY(-2px);
+}
+
+.btn-outline-hcm {
+    border-color: #148795;
+    color: #148795;
+    border-radius: 8px;
+    padding: .4rem .7rem;
+    font-weight: 500;
+    transition: .22s;
+}
+
+.btn-outline-hcm:hover {
+    background: #148795;
+    color: #fff;
+}
+
+.btn-volver {
+    background: #fff;
+    border: 1px solid rgba(0,0,0,.12);
+    border-radius: 8px;
+    padding: .6rem 1rem;
+    font-weight: 500;
+    transition: .22s ease;
+}
+
+.btn-volver:hover {
+    background: rgba(20,135,149,.08);
+    color: #148795;
+}

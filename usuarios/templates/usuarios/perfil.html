@@ -1,43 +1,65 @@
 {% extends 'base.html' %}
 
+{% load static %}
+
 {% block title %}Mi Perfil - Sistema Trazabilidad{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/perfil.css' %}">
+{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-md-8 mx-auto">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0"><i class="bi bi-person-circle"></i> Mi Perfil</h4>
+<div class="container perfil-page">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow-sm border-0">
+            <div class="card-header text-white border-0 perfil-header">
+                <h4 class="mb-0 fw-bold">
+                    <i class="bi bi-person-circle me-1"></i> Mi Perfil
+                </h4>
             </div>
             <div class="card-body">
-                <table class="table table-bordered">
+                <table class="table perfil-table mb-4">
                     <tr>
-                        <th width="30%">RUT (Usuario):</th>
+                        <th>RUT (Usuario)</th>
                         <td>{{ user.rut }}</td>
                     </tr>
                     <tr>
-                        <th>Nombre completo:</th>
+                        <th>Nombre completo</th>
                         <td>{{ user.get_full_name }}</td>
                     </tr>
                     <tr>
-                        <th>Email:</th>
+                        <th>Email</th>
                         <td>{{ user.email|default:"No especificado" }}</td>
                     </tr>
                     <tr>
-                        <th>Teléfono:</th>
+                        <th>Teléfono</th>
                         <td>{{ user.telefono|default:"No especificado" }}</td>
                     </tr>
                     <tr>
-                        <th>Cargo / Rol:</th>
+                        <th>Cargo / Rol</th>
                         <td>
-                            <span class="badge bg-primary fs-6">{{ user.get_rol_display }}</span>
+                            {% if user.rol == 'matrona' %}
+                                <span class="badge badge-matrona px-3 py-2">{{ user.get_rol_display }}</span>
+                            {% elif user.rol == 'medico' %}
+                                <span class="badge badge-medico px-3 py-2">{{ user.get_rol_display }}</span>
+                            {% elif user.rol == 'encargado_ti' %}
+                                <span class="badge badge-ti px-3 py-2">{{ user.get_rol_display }}</span>
+                            {% elif user.rol == 'supervisor' %}
+                                <span class="badge badge-supervisor px-3 py-2">{{ user.get_rol_display }}</span>
+                            {% elif user.rol == 'administrador' %}
+                                <span class="badge badge-administrador px-3 py-2">{{ user.get_rol_display }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary px-3 py-2">{{ user.get_rol_display }}</span>
+                            {% endif %}
                         </td>
                     </tr>
                 </table>
-                
-                <div class="alert alert-info">
-                    <strong><i class="bi bi-info-circle"></i> Permisos de tu rol:</strong>
-                    <ul class="mb-0 mt-2">
+
+                <!-- PERMISOS -->
+                <div class="perfil-permisos p-3">
+                    <strong class="text-dark"><i class="bi bi-unlock"></i> Permisos de tu rol:</strong>
+
+                    <ul class="mt-2 mb-0">
                         {% if user.rol == 'medico' %}
                             <li>Confirmar altas clínicas</li>
                             <li>Revisar historial de pacientes</li>
@@ -70,11 +92,14 @@
                         {% endif %}
                     </ul>
                 </div>
-                <div class="d-grid gap-2">
-                    <a href="{% url 'altas:lista_altas' %}" class="btn btn-secondary">
+
+                <!-- BOTON -->
+                <div class="d-grid mt-4">
+                    <a href="{% url 'app:home' %}" class="btn btn-outline-primary fw-semibold">
                         <i class="bi bi-arrow-left"></i> Volver al Inicio
                     </a>
                 </div>
+
             </div>
         </div>
     </div>
