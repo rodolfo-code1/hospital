@@ -3,95 +3,156 @@
 {% block title %}{{ titulo }} - Sistema Trazabilidad{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-10 mx-auto">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="mb-0"><i class="bi bi-person-vcard"></i> {{ titulo }}</h4>
-                    <p class="mb-0 small">{{ subtitulo }}</p>
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        
+        <div class="card shadow-lg border-0 rounded-3">
+            <div class="card-header bg-primary text-white py-3">
+                <div class="d-flex align-items-center">
+                    <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3">
+                        <i class="bi bi-person-vcard-fill fs-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold">{{ titulo }}</h4>
+                        <small class="text-white-50">{{ subtitulo }}</small>
+                    </div>
                 </div>
             </div>
-            <div class="card-body">
+
+            <div class="card-body p-4 bg-light bg-opacity-10">
                 <form method="post">
                     {% csrf_token %}
 
-                    <div class="alert alert-danger mb-4">
-                        <h5 class="alert-heading"><i class="bi bi-megaphone-fill"></i> Alerta de Estado (Recepción)</h5>
-                        <div class="mb-0">
-                            {{ form.alerta_recepcion }}
-                            <div class="text-danger small">{{ form.alerta_recepcion.errors }}</div>
+                    {% if form.estado_salud.field.widget.input_type == 'radio' %}
+                    <div class="card border-0 shadow-sm mb-4 bg-white">
+                        <div class="card-body text-center">
+                            <label class="form-label fw-bold mb-3 text-uppercase text-secondary small">Clasificación de Riesgo (Triage)</label>
+                            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                {% for radio in form.estado_salud %}
+                                    {% if radio.data.value == 'sano' %}
+                                        <input type="radio" class="btn-check" name="{{ form.estado_salud.name }}" id="{{ radio.id_for_label }}" value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %}>
+                                        <label class="btn btn-outline-success btn-lg px-4 py-3 shadow-sm" for="{{ radio.id_for_label }}">
+                                            <i class="bi bi-emoji-smile-fill fs-3 d-block mb-1"></i> Baja
+                                        </label>
+                                    {% elif radio.data.value == 'observacion' %}
+                                        <input type="radio" class="btn-check" name="{{ form.estado_salud.name }}" id="{{ radio.id_for_label }}" value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %}>
+                                        <label class="btn btn-outline-warning text-dark btn-lg px-4 py-3 shadow-sm" for="{{ radio.id_for_label }}">
+                                            <i class="bi bi-exclamation-circle-fill fs-3 d-block mb-1"></i> Media
+                                        </label>
+                                    {% elif radio.data.value == 'critico' %}
+                                        <input type="radio" class="btn-check" name="{{ form.estado_salud.name }}" id="{{ radio.id_for_label }}" value="{{ radio.data.value }}" {% if radio.data.selected %}checked{% endif %}>
+                                        <label class="btn btn-outline-danger btn-lg px-4 py-3 shadow-sm" for="{{ radio.id_for_label }}">
+                                            <i class="bi bi-heart-pulse-fill fs-3 d-block mb-1"></i> Alta
+                                        </label>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="mt-3">
+                                <label class="form-label fw-bold text-danger small">OBSERVACIÓN DE INGRESO / ALERTA</label>
+                                {{ form.alerta_recepcion }}
+                            </div>
                         </div>
                     </div>
-                    
-                    <h5 class="mb-3 text-primary border-bottom pb-2">Identificación</h5>
-                    <div class="row g-3">
-                        <div class="col-md-4">
-                            {{ form.rut.label_tag }}
-                            {{ form.rut }}
-                            <div class="text-danger small">{{ form.rut.errors }}</div>
+                    {% endif %}
+
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-bottom-0 pt-3">
+                            <h6 class="text-uppercase text-primary fw-bold small"><i class="bi bi-person-lines-fill me-1"></i> Datos Personales</h6>
                         </div>
-                        <div class="col-md-8">
-                            {{ form.nombre.label_tag }}
-                            {{ form.nombre }}
-                            <div class="text-danger small">{{ form.nombre.errors }}</div>
-                        </div>
-                        
-                        <div class="col-md-4">
-                            {{ form.fecha_nacimiento.label_tag }}
-                            {{ form.fecha_nacimiento }}
-                        </div>
-                        <div class="col-md-2">
-                            {{ form.edad.label_tag }}
-                            {{ form.edad }}
-                        </div>
-                        <div class="col-md-3">
-                            {{ form.nacionalidad.label_tag }}
-                            {{ form.nacionalidad }}
-                        </div>
-                        <div class="col-md-3">
-                            {{ form.prevision.label_tag }}
-                            {{ form.prevision }}
+                        <div class="card-body pt-0">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">RUT</label>
+                                    {{ form.rut }}
+                                    <div class="text-danger small">{{ form.rut.errors }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Nombre Completo</label>
+                                    {{ form.nombre }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Nacionalidad</label>
+                                    {{ form.nacionalidad }}
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bold">Fecha Nacimiento</label>
+                                    {{ form.fecha_nacimiento }}
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bold text-muted">Edad</label>
+                                    {{ form.edad }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Previsión</label>
+                                    {{ form.prevision }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">CESFAM</label>
+                                    {{ form.cesfam }}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <h5 class="mb-3 mt-4 text-primary border-bottom pb-2">Contacto y Origen</h5>
-                    <div class="row g-3">
-                        <div class="col-md-6">{{ form.direccion.label_tag }} {{ form.direccion }}</div>
-                        <div class="col-md-3">{{ form.comuna.label_tag }} {{ form.comuna }}</div>
-                        <div class="col-md-3">{{ form.cesfam.label_tag }} {{ form.cesfam }}</div>
-                        <div class="col-md-6">{{ form.telefono.label_tag }} {{ form.telefono }}</div>
-                        <div class="col-md-6">{{ form.email.label_tag }} {{ form.email }}</div>
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white border-bottom-0 pt-3">
+                            <h6 class="text-uppercase text-primary fw-bold small"><i class="bi bi-geo-alt-fill me-1"></i> Contacto</h6>
+                        </div>
+                        <div class="card-body pt-0">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Dirección</label>
+                                    {{ form.direccion }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Comuna</label>
+                                    {{ form.comuna }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Teléfono</label>
+                                    {{ form.telefono }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Email</label>
+                                    {{ form.email }}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    
-                   <h5 class="mb-3 mt-4 text-primary border-bottom pb-2"><i class="bi bi-clipboard-pulse"></i> Antecedentes Clínicos</h5>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            {{ form.controles_prenatales.label_tag }}
-                            {{ form.controles_prenatales }}
-                            <div class="text-danger small">{{ form.controles_prenatales.errors }}</div>
+
+                    <div class="card border-0 shadow-sm mb-4 border-start border-success border-4">
+                        <div class="card-header bg-white border-bottom-0 pt-3">
+                            <h6 class="text-uppercase text-success fw-bold small"><i class="bi bi-clipboard2-pulse-fill me-1"></i> Antecedentes Obstétricos</h6>
                         </div>
-                        <div class="col-md-6">
-                            {{ form.embarazos_anteriores.label_tag }}
-                            {{ form.embarazos_anteriores }}
-                            <div class="text-danger small">{{ form.embarazos_anteriores.errors }}</div>
-                        </div>
-                        <div class="col-12">
-                            {{ form.patologias.label_tag }}
-                            {{ form.patologias }}
-                            <small class="text-muted">Indique diagnósticos relevantes.</small>
-                            <div class="text-danger small">{{ form.patologias.errors }}</div>
+                        <div class="card-body pt-0">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Controles Prenatales</label>
+                                    {{ form.controles_prenatales }}
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label fw-bold">Partos Anteriores</label>
+                                    {{ form.embarazos_anteriores }}
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Diagnósticos / Patologías</label>
+                                    {{ form.patologias }}
+                                    <div class="form-text">Indique diagnósticos relevantes (Diabetes, Hipertensión, etc.)</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
                     <hr class="my-4">
                     
                     <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'app:home' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
+                        <a href="{% url 'app:home' %}" class="btn btn-light border px-4 btn-lg">
+                            Cancelar
                         </a>
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-save"></i> Guardar Ficha
+                        <button type="submit" class="btn btn-primary px-5 btn-lg shadow-sm">
+                            <i class="bi bi-save me-2"></i> Guardar Registro
                         </button>
                     </div>
                 </form>
@@ -100,16 +161,5 @@
     </div>
 </div>
 
-<script>
-    document.getElementById('id_fecha_nacimiento').addEventListener('change', function() {
-        const fechaNac = new Date(this.value);
-        const hoy = new Date();
-        if (!isNaN(fechaNac)) {
-            let edad = hoy.getFullYear() - fechaNac.getFullYear();
-            const m = hoy.getMonth() - fechaNac.getMonth();
-            if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) { edad--; }
-            document.getElementById('id_edad').value = edad;
-        }
-    });
 </script>
 {% endblock %}

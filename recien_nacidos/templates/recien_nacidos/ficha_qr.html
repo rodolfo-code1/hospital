@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha Digital - {{ rn.codigo_unico }}</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css">
+    
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .card-header-clean {
+            background-color: transparent;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container py-4" style="max-width: 600px;">
+        
+        <div class="text-center mb-4">
+            <h5 class="text-secondary fw-bold mb-0">HOSPITAL CLÍNICO HERMINDA MARTÍN</h5>
+            <small class="text-muted">Ficha Neonatal Digital</small>
+        </div>
+
+        <div class="alert alert-success small text-center mb-4 shadow-sm border-0 bg-success bg-opacity-10 text-success">
+            <i class="bi bi-shield-check me-1"></i> Información Clínica Verificada
+        </div>
+
+        <div class="card shadow border-0 border-start border-success border-5 mb-4 rounded-3">
+            <div class="card-header card-header-clean pt-3 d-flex justify-content-between align-items-center">
+                <h6 class="text-uppercase text-success fw-bold small mb-0">
+                    <i class="bi bi-emoji-smile-fill me-1"></i> Paciente Neonatal
+                </h6>
+                {% if rn.estado_alta == 'hospitalizado' %}
+                    <span class="badge bg-success bg-opacity-75 text-white">HOSPITALIZADO</span>
+                {% else %}
+                    <span class="badge bg-secondary text-white">ALTA MÉDICA</span>
+                {% endif %}
+            </div>
+            <div class="card-body pt-2">
+                <h2 class="text-center fw-bold text-dark mb-1">{{ rn.codigo_unico }}</h2>
+                <p class="text-center text-muted mb-4">
+                    {% if rn.nombre %}{{ rn.nombre }}{% else %}Recién Nacido{% endif %}
+                </p>
+                
+                <div class="row text-center g-2 mb-3">
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded border-0">
+                            <small class="d-block text-muted text-uppercase" style="font-size: 0.65rem;">Sexo</small>
+                            <strong class="text-dark">{{ rn.get_sexo_display }}</strong>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded border-0">
+                            <small class="d-block text-muted text-uppercase" style="font-size: 0.65rem;">Peso</small>
+                            <strong class="text-dark">{{ rn.peso }} kg</strong>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 bg-light rounded border-0">
+                            <small class="d-block text-muted text-uppercase" style="font-size: 0.65rem;">Talla</small>
+                            <strong class="text-dark">{{ rn.talla }} cm</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <ul class="list-group list-group-flush small">
+                    <li class="list-group-item px-0 py-2 border-0 d-flex justify-content-between">
+                        <span class="text-muted"><i class="bi bi-calendar-event me-2"></i>Nacimiento:</span>
+                        <span class="fw-bold">{{ rn.parto.fecha_hora_termino|date:"d/m/Y H:i" }}</span>
+                    </li>
+                    <li class="list-group-item px-0 py-2 border-0 d-flex justify-content-between">
+                        <span class="text-muted"><i class="bi bi-activity me-2"></i>Tipo Parto:</span>
+                        <span>{{ rn.parto.get_tipo_display }}</span>
+                    </li>
+                    <li class="list-group-item px-0 py-2 border-0 d-flex justify-content-between align-items-center">
+                        <span class="text-muted"><i class="bi bi-heart-pulse me-2"></i>APGAR (1'/5'):</span>
+                        <div>
+                            <span class="badge {% if rn.apgar_1_min < 7 %}bg-danger{% else %}bg-success{% endif %} rounded-pill me-1">{{ rn.apgar_1_min }}</span>
+                            <span class="badge {% if rn.apgar_5_min < 7 %}bg-danger{% else %}bg-success{% endif %} rounded-pill">{{ rn.apgar_5_min }}</span>
+                        </div>
+                    </li>
+                    {% if rn.perimetro_cefalico %}
+                    <li class="list-group-item px-0 py-2 border-0 d-flex justify-content-between">
+                        <span class="text-muted"><i class="bi bi-rulers me-2"></i>Perímetro Cefálico:</span>
+                        <span>{{ rn.perimetro_cefalico }} cm</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center mb-3 mt-4 px-2">
+            <i class="bi bi-person-standing-dress fs-5 text-primary me-2"></i>
+            <h6 class="text-muted fw-bold text-uppercase mb-0">
+                Vínculo Materno
+            </h6>
+        </div>
+
+        <div class="card shadow-sm border-0 border-start border-primary border-4 mb-3 rounded-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <small class="text-muted d-block text-uppercase" style="font-size: 0.65rem;">Madre</small>
+                        <h5 class="fw-bold text-primary mb-0">{{ rn.parto.madre.nombre }}</h5>
+                    </div>
+                    {% if rn.parto.madre.estado_alta == 'hospitalizado' %}
+                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">EN SALA</span>
+                    {% else %}
+                        <span class="badge bg-light text-secondary border">ALTA</span>
+                    {% endif %}
+                </div>
+                
+                <div class="row text-center g-0 bg-light rounded mb-2 mt-2 p-2">
+                    <div class="col-6 border-end">
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">RUT</small>
+                        <strong>{{ rn.parto.madre.rut }}</strong>
+                    </div>
+                    <div class="col-6">
+                        <small class="d-block text-muted" style="font-size: 0.7rem;">Edad</small>
+                        <strong>{{ rn.parto.madre.edad }} años</strong>
+                    </div>
+                </div>
+                
+                <div class="small text-muted mt-2">
+                    <i class="bi bi-hospital me-1"></i> {{ rn.parto.madre.cesfam|default:"Sin CESFAM" }}
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5 mb-3">
+            <small class="text-muted opacity-50" style="font-size: 0.7rem;">
+                Sistema de Trazabilidad Seguro &copy; 2025
+            </small>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

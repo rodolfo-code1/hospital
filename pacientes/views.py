@@ -7,66 +7,80 @@ from .forms import MadreForm, MadreRecepcionForm
 from usuarios.decorators import rol_requerido
 from usuarios.models import Usuario
 from app.models import Notificacion
-# --- IMPORTS NUEVOS PARA FILTRADO ---
+
 from partos.models import Aborto, Parto
 from recien_nacidos.models import RecienNacido
-
+import qrcode
+from io import BytesIO
+from django.http import HttpResponse
+from usuarios.decorators import rol_requerido
+from django.urls import reverse
 # ==========================================
 # VISTA RECEPCIONISTA: ADMISIÓN + ALERTA
 # ==========================================
+
+
 @login_required
 def registrar_madre_recepcion(request):
-    if request.user.rol not in ['recepcionista', 'jefatura', 'encargado_ti']:
-         messages.error(request, "No tienes permiso para acceder a Admisión.")
-         return redirect('app:home')
 
     if request.method == 'POST':
-        # RUT crudo para verificar reingreso
-        rut_raw = request.POST.get('rut', '').replace('.', '').replace('-', '').upper()
-        rut_formateado = f"{rut_raw[:-1]}-{rut_raw[-1]}" if len(rut_raw) > 1 else rut_raw
-        
-        madre_existente = Madre.objects.filter(rut=rut_formateado).first()
-
-        if madre_existente:
-            # --- REINGRESO (Si ya existe) ---
-            if madre_existente.estado_alta == 'hospitalizado':
-                messages.warning(request, f'La paciente {madre_existente.nombre} ya está activa en sala.')
-                return redirect('app:home')
+        form = MadreRecepcionForm(request.POST)
+    
+        if form.is_valid():
+            madre = form.save(commit=False)
+            madre.creado_por = request.user
+            madre.save()
+            
+            # --- LÓGICA DE NOTIFICACIÓN SEMÁFORO ---
+            
+            # 1. Obtener el estado del semáforo
+            estado_semaforo = madre.estado_salud # 'sano', 'observacion', 'critico'
+            texto_alerta = madre.alerta_recepcion
+            
+            # 2. Determinar Urgencia
+            # Es urgente si hay texto de alerta O si el semáforo es Rojo/Amarillo
+            es_urgente = bool(texto_alerta) or estado_semaforo in ['critico', 'observacion']
+            
+            tipo_noti = 'urgente' if es_urgente else 'info'
+            
+            # 3. Título dinámico con iconos
+            if estado_semaforo == 'critico':
+                titulo_noti = "🔴 INGRESO CRÍTICO (ALTO RIESGO)"
+            elif estado_semaforo == 'observacion':
+                titulo_noti = "🟡 Ingreso en Observación"
             else:
-                # Reactivar paciente antigua
-                form = MadreRecepcionForm(request.POST, instance=madre_existente)
-                if form.is_valid():
-                    madre = form.save(commit=False)
-                    madre.estado_alta = 'hospitalizado' # Reactivar
-                    madre.estado_salud = 'observacion'
-                    # Importante: update fecha_ingreso para que cuente como nuevo ciclo
-                    from django.utils import timezone
-                    madre.fecha_ingreso = timezone.now() 
-                    madre.save()
-                    
-                    # Notificar
-                    crear_notificacion_ingreso(madre, reingreso=True)
-                    messages.success(request, f'REINGRESO: Paciente {madre.nombre} activada.')
-                    return redirect('app:home')
-        else:
-            # --- NUEVO INGRESO ---
-            form = MadreRecepcionForm(request.POST)
-            if form.is_valid():
-                madre = form.save(commit=False)
-                madre.creado_por = request.user
-                madre.save()
-                
-                crear_notificacion_ingreso(madre, reingreso=False)
-                messages.success(request, f'Paciente {madre.nombre} registrada.')
-                return redirect('app:home')
+                titulo_noti = "🟢 Nuevo Ingreso (Baja Complejidad)"
+            
+            # 4. Cuerpo del mensaje
+            mensaje_texto = f"Paciente: {madre.nombre}\nRUT: {madre.rut}"
+            if texto_alerta:
+                mensaje_texto += f"\n⚠️ OBS: {texto_alerta}"
+            
+            # 5. Enviar a Matronas
+            matronas = Usuario.objects.filter(rol='matrona')
+            notificaciones = []
+            for matrona in matronas:
+                notificaciones.append(Notificacion(
+                    usuario=matrona,
+                    titulo=titulo_noti,
+                    mensaje=mensaje_texto,
+                    tipo=tipo_noti,
+                    link=f"/pacientes/completar/{madre.pk}/"
+                ))
+            Notificacion.objects.bulk_create(notificaciones)
+            # ---------------------------------------
+
+            messages.success(request, f'Paciente ingresada con clasificación {madre.get_estado_salud_display()}.')
+            return redirect('app:home')
     else:
         form = MadreRecepcionForm()
     
     return render(request, 'pacientes/registrar_madre.html', {
         'form': form,
         'titulo': 'Admisión de Paciente',
-        'subtitulo': 'Registro o Reingreso de Pacientes'
+        'subtitulo': 'Registro y Clasificación de Riesgo'
     })
+
 
 def crear_notificacion_ingreso(madre, reingreso=False):
     """Auxiliar para notificar a matronas"""
@@ -167,3 +181,96 @@ def registrar_madre(request): return redirect('pacientes:admision_madre')
 def buscar_madre(request): return redirect('pacientes:lista_pacientes')
 @login_required
 def completar_madre(request, pk): return redirect('pacientes:ver_ficha', pk=pk)
+
+
+@login_required
+def historial_recepcion(request):
+    """
+    Vista para que la Recepción revise el historial de ingresos.
+    Muestra todos los pacientes, su estado y permite buscar.
+    """
+    # Verificación básica de rol
+    if request.user.rol not in ['recepcionista', 'encargado_ti']:
+         messages.error(request, "Acceso restringido a personal de admisión.")
+         return redirect('app:home')
+
+    # Traer todas las madres ordenadas por fecha (más nuevas primero)
+    madres = Madre.objects.all().order_by('-fecha_ingreso')
+    
+    # Buscador
+    query = request.GET.get('q')
+    if query:
+        madres = madres.filter(
+            Q(rut__icontains=query) | 
+            Q(nombre__icontains=query)
+        )
+    
+    return render(request, 'pacientes/historial_recepcion.html', {
+        'madres': madres,
+        'query': query
+    })
+
+# ==========================================
+# GESTIÓN DE IDENTIFICACIÓN (ADMINISTRATIVO)
+# ==========================================
+
+@login_required
+@rol_requerido('administrativo', 'jefatura')
+def admin_buscar_paciente(request):
+    """Buscador de pacientes para QR (Historial completo)."""
+    madres = Madre.objects.all().order_by('-fecha_ingreso')
+    query = request.GET.get('q')
+    if query:
+        madres = madres.filter(Q(rut__icontains=query) | Q(nombre__icontains=query))
+    return render(request, 'pacientes/admin_buscar.html', {'madres': madres, 'query': query})
+
+@login_required
+@rol_requerido('administrativo',)
+def ver_brazalete(request, pk):
+    """
+    Vista previa del brazalete listo para imprimir.
+    """
+    madre = get_object_or_404(Madre, pk=pk)
+    return render(request, 'pacientes/brazalete.html', {'madre': madre})
+
+@login_required
+def ficha_qr_madre(request, pk):
+    """
+    Vista móvil que se abre al escanear el QR.
+    Muestra datos de la madre y sus partos/hijos asociados.
+    """
+    madre = get_object_or_404(Madre, pk=pk)
+    
+    # Traemos los partos y sus hijos para mostrarlos en la ficha
+    partos = madre.partos.all().prefetch_related('recien_nacidos').order_by('-fecha_hora_inicio')
+    
+    return render(request, 'pacientes/ficha_qr_madre.html', {
+        'madre': madre,
+        'partos': partos
+    })
+
+@login_required
+def generar_qr_imagen(request, pk):
+    """
+    Genera QR que apunta a la URL de la ficha digital de la madre.
+    """
+    madre = get_object_or_404(Madre, pk=pk)
+    
+    # 1. Construir la URL completa
+    path_relativo = reverse('pacientes:ficha_qr_madre', args=[pk])
+    url_completa = request.build_absolute_uri(path_relativo)
+    
+    # 2. Crear QR con la URL
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(url_completa)
+    qr.make(fit=True)
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = BytesIO()
+    img.save(buffer)
+    return HttpResponse(buffer.getvalue(), content_type="image/png")

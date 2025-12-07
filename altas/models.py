@@ -1,11 +1,11 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from pacientes.models import Madre
-from partos.models import Parto
+from partos.models import Parto, Aborto
 from recien_nacidos.models import RecienNacido
 from django.utils import timezone
-from partos.models import Parto, Aborto
 from simple_history.models import HistoricalRecords
+
 
 class Alta(models.Model):
     """
@@ -20,8 +20,8 @@ class Alta(models.Model):
         ('completada', 'Alta Completada'),
         ('rechazada', 'Rechazada'),
     ]
-
-    # Opciones de Anticonceptivos (MAC)
+    
+    # Opciones de Anticonceptivos
     METODOS_ANTICONCEPTIVOS = [
         ('ninguno', 'Ninguno / No aplica'),
         ('diu', 'DIU (Dispositivo Intrauterino)'),
@@ -31,14 +31,39 @@ class Alta(models.Model):
         ('preservativo', 'Preservativos'),
         ('ligadura', 'Ligadura de Trompas (Esterilización)'),
         ('otro', 'Otro Método'),
-
-    
     ]
     
     # Relaciones Opcionales
-    madre = models.ForeignKey(Madre, on_delete=models.CASCADE, related_name='altas', verbose_name="Madre", null=True, blank=True)
-    parto = models.ForeignKey(Parto, on_delete=models.CASCADE, related_name='altas', verbose_name="Parto", null=True, blank=True)
-    recien_nacido = models.ForeignKey(RecienNacido, on_delete=models.CASCADE, related_name='altas', verbose_name="Recién Nacido", null=True, blank=True)
+    madre = models.ForeignKey(
+        Madre,
+        on_delete=models.CASCADE,
+        related_name='altas',
+        verbose_name="Madre",
+        null=True, blank=True
+    )
+    parto = models.ForeignKey(
+        Parto,
+        on_delete=models.CASCADE,
+        related_name='altas',
+        verbose_name="Parto",
+        null=True, blank=True
+    )
+    recien_nacido = models.ForeignKey(
+        RecienNacido,
+        on_delete=models.CASCADE,
+        related_name='altas',
+        verbose_name="Recién Nacido",
+        null=True, blank=True
+    )
+    
+    # NUEVO: Relación con Aborto (para cerrar el ciclo IVE)
+    aborto = models.ForeignKey(
+        'partos.Aborto',
+        on_delete=models.CASCADE,
+        related_name='altas',
+        verbose_name="Evento Aborto",
+        null=True, blank=True
+    )
     
     estado = models.CharField(max_length=30, choices=ESTADO_ALTA, default='pendiente')
     
@@ -50,8 +75,7 @@ class Alta(models.Model):
     alta_clinica_confirmada = models.BooleanField(default=False)
     medico_confirma = models.CharField(max_length=200, blank=True)
     fecha_confirmacion_clinica = models.DateTimeField(null=True, blank=True)
-
-    # --- NUEVOS CAMPOS: ANTICONCEPCIÓN ---
+    
     se_entrego_anticonceptivo = models.BooleanField(default=False, verbose_name="¿Se entregó MAC?")
     metodo_anticonceptivo = models.CharField(
         max_length=50, 
@@ -60,7 +84,6 @@ class Alta(models.Model):
         verbose_name="Método entregado",
         blank=True
     )
-    # -------------------------------------
     
     # Confirmación Administrativa
     alta_administrativa_confirmada = models.BooleanField(default=False)
@@ -101,18 +124,13 @@ class Alta(models.Model):
         problemas = []
         if self.madre and not self.madre.tiene_registros_completos():
             problemas.append("Madre: Faltan datos")
-        
-        # Validar Parto O Aborto
         if self.parto and not self.parto.tiene_registros_completos():
             problemas.append("Parto: Faltan datos")
-        
-        # Si es aborto, asumimos que al confirmarlo el médico llenó todo
+        if self.recien_nacido and not self.recien_nacido.tiene_registros_completos():
+            problemas.append("RN: Faltan datos")
         if self.aborto and self.aborto.estado != 'confirmado':
-            problemas.append("Aborto: Procedimiento no confirmado por médico")
-        if self.madre and not self.madre.tiene_registros_completos(): problemas.append("Madre: Faltan datos")
-        if self.parto and not self.parto.tiene_registros_completos(): problemas.append("Parto: Faltan datos")
-        if self.recien_nacido and not self.recien_nacido.tiene_registros_completos(): problemas.append("RN: Faltan datos")
-        
+            problemas.append("Aborto: No confirmado por médico")
+            
         if problemas:
             self.registros_completos = False
             self.observaciones_validacion = " | ".join(problemas)
@@ -120,7 +138,9 @@ class Alta(models.Model):
         else:
             self.registros_completos = True
             self.observaciones_validacion = "Registros completos"
-            if self.estado == 'pendiente': self.estado = 'validada'
+            if self.estado == 'pendiente':
+                self.estado = 'validada'
+        
         self.save()
         return self.registros_completos
     
@@ -137,12 +157,31 @@ class Alta(models.Model):
         self.administrativo_confirma = admin_nombre
         self.fecha_confirmacion_administrativa = timezone.now()
         self.estado = 'alta_administrativa'
+        
+        # --- CAMBIO CLAVE: CERRAR LOS ESTADOS PARA QUE DESAPAREZCAN DE LAS LISTAS ---
+        
+        # 1. Liberar Madre
         if self.madre:
             self.madre.estado_alta = 'alta_administrativa'
             self.madre.save()
+            
+        # 2. Liberar Recién Nacido
         if self.recien_nacido:
             self.recien_nacido.estado_alta = 'alta_administrativa'
             self.recien_nacido.save()
+            
+        # 3. Cerrar el Parto (ESTO ES LO QUE FALTABA)
+        # Al cerrar el parto, deja de aparecer en el selector de "Registrar RN"
+        if self.parto:
+            self.parto.estado_alta = 'alta_administrativa'
+            self.parto.save()
+            
+        # 4. Si es un aborto, también se cierra
+        if self.aborto:
+            # Podrías agregar un estado 'archivado' al modelo Aborto si lo tuvieras,
+            # o simplemente usar el estado de la madre que ya se cerró arriba.
+            pass
+            
         self.save()
         self._verificar_alta_completa()
     
