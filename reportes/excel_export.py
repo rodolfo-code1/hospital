@@ -556,3 +556,134 @@ def descargar_excel_response(wb, nombre_archivo):
     )
     response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
     return response
+
+
+def crear_libro_export_madres(fecha_inicio, fecha_fin):
+    """
+    Crea un libro Excel con dos hojas:
+    - Hoja 1: Listado detallado de Madres + Parto + Recién Nacido (una fila por RN; si no tiene RN o Parto, quedan vacíos)
+    - Hoja 2: Resumen con las 4 secciones REM (A, B, C, D) concatenadas
+    """
+    wb = Workbook()
+
+    # --- Hoja 1: Madres y Partos ---
+    ws1 = wb.active
+    ws1.title = "Madres y Partos"
+
+    headers = [
+        'Fecha Ingreso Madre', 'Rut Madre', 'Nombre Madre',
+        'Fecha Parto', 'Tipo Parto', 'EG Semanas', 'EG Días',
+        'Código RN', 'RN Nombre', 'Sexo RN', 'Peso (kg)', 'Talla (cm)', "APGAR 1'",
+        'Tuvo Acompañante', 'Nombre Acompañante', 'Matrona', 'Médico', 'Causa Cesárea', 'Observaciones'
+    ]
+    for col, h in enumerate(headers, start=1):
+        cell = ws1.cell(row=1, column=col)
+        cell.value = h
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center')
+
+    # Obtener madres en rango
+    madres = Madre.objects.filter(fecha_ingreso__date__range=[fecha_inicio, fecha_fin]).order_by('fecha_ingreso')
+    row = 2
+    for madre in madres:
+        partos = madre.partos.filter(fecha_hora_inicio__date__range=[fecha_inicio, fecha_fin])
+        if not partos.exists():
+            ws1.cell(row=row, column=1).value = madre.fecha_ingreso.strftime('%Y-%m-%d %H:%M:%S') if madre.fecha_ingreso else ''
+            ws1.cell(row=row, column=2).value = madre.rut
+            ws1.cell(row=row, column=3).value = madre.nombre
+            # columnas de parto y RN quedan vacías
+            row += 1
+            continue
+
+        for parto in partos:
+            rns = parto.recien_nacidos.all()
+            if not rns.exists():
+                ws1.cell(row=row, column=1).value = madre.fecha_ingreso.strftime('%Y-%m-%d %H:%M:%S') if madre.fecha_ingreso else ''
+                ws1.cell(row=row, column=2).value = madre.rut
+                ws1.cell(row=row, column=3).value = madre.nombre
+                ws1.cell(row=row, column=4).value = parto.fecha_hora_inicio.strftime('%Y-%m-%d %H:%M:%S') if parto.fecha_hora_inicio else ''
+                ws1.cell(row=row, column=5).value = parto.get_tipo_display() if hasattr(parto, 'get_tipo_display') else parto.tipo
+                ws1.cell(row=row, column=6).value = parto.edad_gestacional_semanas
+                ws1.cell(row=row, column=7).value = parto.edad_gestacional_dias
+                # dejar resto en blanco
+                row += 1
+                continue
+
+            for rn in rns:
+                ws1.cell(row=row, column=1).value = madre.fecha_ingreso.strftime('%Y-%m-%d %H:%M:%S') if madre.fecha_ingreso else ''
+                ws1.cell(row=row, column=2).value = madre.rut
+                ws1.cell(row=row, column=3).value = madre.nombre
+                ws1.cell(row=row, column=4).value = parto.fecha_hora_inicio.strftime('%Y-%m-%d %H:%M:%S') if parto.fecha_hora_inicio else ''
+                ws1.cell(row=row, column=5).value = parto.get_tipo_display() if hasattr(parto, 'get_tipo_display') else parto.tipo
+                ws1.cell(row=row, column=6).value = parto.edad_gestacional_semanas
+                ws1.cell(row=row, column=7).value = parto.edad_gestacional_dias
+                ws1.cell(row=row, column=8).value = rn.codigo_unico
+                ws1.cell(row=row, column=9).value = rn.nombre
+                ws1.cell(row=row, column=10).value = rn.sexo
+                ws1.cell(row=row, column=11).value = float(rn.peso) if rn.peso is not None else None
+                ws1.cell(row=row, column=12).value = float(rn.talla) if rn.talla is not None else None
+                ws1.cell(row=row, column=13).value = rn.apgar_1_min
+                # Acompañante
+                tuvo_acom = bool(parto.acompanante and str(parto.acompanante).strip())
+                ws1.cell(row=row, column=14).value = 'Sí' if tuvo_acom else 'No'
+                ws1.cell(row=row, column=15).value = parto.acompanante if tuvo_acom else ''
+                # Equipo
+                ws1.cell(row=row, column=16).value = parto.matrona_responsable if hasattr(parto, 'matrona_responsable') else ''
+                ws1.cell(row=row, column=17).value = parto.medico_responsable if hasattr(parto, 'medico_responsable') else ''
+                # Causa de cesárea (si aplica)
+                causa = ''
+                if parto.tipo and 'cesarea' in str(parto.tipo).lower():
+                    causa = parto.complicaciones or parto.observaciones or ''
+                ws1.cell(row=row, column=18).value = causa
+                ws1.cell(row=row, column=19).value = parto.observaciones or ''
+                row += 1
+
+    # Ajustar anchos
+    # Ajustar anchos (coincidentes con número de columnas)
+    widths = [22, 15, 30, 22, 20, 8, 6, 18, 25, 8, 10, 8, 8, 12, 25, 20, 20, 30, 30]
+    for idx, width in enumerate(widths, start=1):
+        try:
+            ws1.column_dimensions[ws1.cell(row=1, column=idx).column_letter].width = width
+        except Exception:
+            pass
+
+    # --- Hoja 2: Agregar resúmenes de las 4 secciones ---
+    ws2 = wb.create_sheet(title='REM - Secciones A-D')
+    # Usar las funciones existentes para construir booklets temporales y copiar su contenido
+    wb_a = crear_libro_excel_seccion_a(fecha_inicio, fecha_fin)
+    wb_b = crear_libro_excel_seccion_b(fecha_inicio, fecha_fin)
+    wb_c = crear_libro_excel_seccion_c(fecha_inicio, fecha_fin)
+    wb_d = crear_libro_excel_seccion_d(fecha_inicio, fecha_fin)
+
+    current_row = 1
+    def _copy_sheet_into(ws_dest, ws_src, start_row):
+        """Copiar celdas desde `ws_src` a `ws_dest` preservando valores y estilos básicos."""
+        r = start_row
+        for src_row in ws_src.iter_rows():
+            for col_idx, src_cell in enumerate(src_row, start=1):
+                dest_cell = ws_dest.cell(row=r, column=col_idx)
+                dest_cell.value = src_cell.value
+                # Copiar estilos simples
+                try:
+                    dest_cell.font = src_cell.font
+                    dest_cell.fill = src_cell.fill
+                    dest_cell.alignment = src_cell.alignment
+                    dest_cell.border = src_cell.border
+                except Exception:
+                    pass
+            r += 1
+        return r
+
+    # Copiar Sección A
+    current_row = _copy_sheet_into(ws2, wb_a.active, current_row)
+    current_row += 2
+    # Copiar Sección B
+    current_row = _copy_sheet_into(ws2, wb_b.active, current_row)
+    current_row += 2
+    # Copiar Sección C
+    current_row = _copy_sheet_into(ws2, wb_c.active, current_row)
+    current_row += 2
+    # Copiar Sección D
+    current_row = _copy_sheet_into(ws2, wb_d.active, current_row)
+
+    return wb

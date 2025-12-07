@@ -25,6 +25,61 @@
                     <h6 class="mb-1">Sección D: Información de Recién Nacidos</h6>
                     <p class="mb-0 small text-muted">Indicadores de recién nacidos</p>
                 </a>
+                <a href="#" class="list-group-item list-group-item-action" data-bs-toggle="modal" data-bs-target="#modalExportMadres">
+                    <h6 class="mb-1">Exportar Madres y REM (Excel)</h6>
+                    <p class="mb-0 small text-muted">Selecciona un rango de fechas para exportar madres, partos y las 4 secciones REM</p>
+                </a>
+
+                                <!-- Modal selección de fechas -->
+                                <div class="modal fade" id="modalExportMadres" tabindex="-1" aria-labelledby="modalExportMadresLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-sm modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="modalExportMadresLabel">Exportar Datos y REM</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form method="get" action="{% url 'reportes:descargar_export_madres' %}">
+                                                <div class="modal-body">
+                                                    <div class="mb-2">
+                                                        <label for="modal_fecha_inicio" class="form-label small">Fecha Inicio</label>
+                                                        <input id="modal_fecha_inicio" name="fecha_inicio" type="date" class="form-control form-control-sm" required />
+                                                    </div>
+                                                    <div class="mb-2">
+                                                        <label for="modal_fecha_fin" class="form-label small">Fecha Fin</label>
+                                                        <input id="modal_fecha_fin" name="fecha_fin" type="date" class="form-control form-control-sm" required />
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                                                    <button type="submit" class="btn btn-success btn-sm">Descargar</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <script>
+                                (function(){
+                                    // Calcular fechas: primer día del mes y hoy
+                                    function toISODate(d){
+                                        const yyyy = d.getFullYear();
+                                        const mm = String(d.getMonth()+1).padStart(2,'0');
+                                        const dd = String(d.getDate()).padStart(2,'0');
+                                        return `${yyyy}-${mm}-${dd}`;
+                                    }
+                                    const today = new Date();
+                                    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+
+                                    // Poner valores por defecto en modal inputs cuando se abre
+                                    const modal = document.getElementById('modalExportMadres');
+                                    modal && modal.addEventListener('show.bs.modal', function(){
+                                        const inicio = document.getElementById('modal_fecha_inicio');
+                                        const fin = document.getElementById('modal_fecha_fin');
+                                        if(inicio && !inicio.value) inicio.value = toISODate(firstDay);
+                                        if(fin && !fin.value) fin.value = toISODate(today);
+                                    });
+                                })();
+                                </script>
             </div>
         </div>
     </div>

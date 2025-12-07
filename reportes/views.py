@@ -15,6 +15,7 @@ from .excel_export import (
     crear_libro_excel_seccion_d,
     descargar_excel_response
 )
+from .excel_export import crear_libro_export_madres
 from usuarios.decorators import supervisor_requerido
 
 # ==========================================
@@ -449,4 +450,28 @@ def descargar_excel_seccion_d(request):
     
     wb = crear_libro_excel_seccion_d(fecha_inicio, fecha_fin)
     nombre = f"Seccion_D_RecienNacidos_{fecha_inicio}_{fecha_fin}.xlsx"
+    return descargar_excel_response(wb, nombre)
+
+
+
+@login_required
+@supervisor_requerido
+def descargar_export_madres(request):
+    """Descargar Excel completo: hoja1 Madres+Partos+RN, hoja2 Secciones A-D"""
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+
+    # Manejar valores None o strings 'None'
+    if not fecha_inicio or fecha_inicio == 'None':
+        fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = datetime.fromisoformat(fecha_inicio).date()
+
+    if not fecha_fin or fecha_fin == 'None':
+        fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = datetime.fromisoformat(fecha_fin).date()
+
+    wb = crear_libro_export_madres(fecha_inicio, fecha_fin)
+    nombre = f"Export_Madres_Partos_REM_{fecha_inicio}_{fecha_fin}.xlsx"
     return descargar_excel_response(wb, nombre)
