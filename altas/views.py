@@ -52,47 +52,36 @@ def panel_medico(request):
 @medico_requerido
 def cambiar_estado_salud(request, tipo_paciente, pk):
     """
-    Actualiza el semáforo de salud (Sano/Observación/Crítico).
-    INCLUYE RESTRICCIÓN DE SEGURIDAD: No permite pasar a 'sano' si hay alertas pendientes.
+    Actualiza el semáforo de salud con validación de seguridad.
     """
     nuevo_estado = request.POST.get('estado_salud')
     
     if tipo_paciente == 'madre':
         paciente = get_object_or_404(Madre, pk=pk)
         
-        # --- VALIDACIÓN DE SEGURIDAD (MADRE) ---
         if nuevo_estado == 'sano':
-            # Verificar si tiene algún parto con complicaciones NO revisado
             complicaciones_sin_revisar = paciente.partos.filter(
                 tuvo_complicaciones=True,
                 alerta_revisada=False
             ).exists()
-            
             if complicaciones_sin_revisar:
-                messages.error(request, "⛔ ACCIÓN DENEGADA: La paciente tiene complicaciones de parto pendientes de revisión. Verifique el Panel de Alertas.")
+                messages.error(request, "⛔ ACCIÓN DENEGADA: Complicaciones pendientes de revisión.")
                 return redirect('altas:panel_medico')
-        # ---------------------------------------
         
     else:
         paciente = get_object_or_404(RecienNacido, pk=pk)
         
-        # --- VALIDACIÓN DE SEGURIDAD (RN) ---
         if nuevo_estado == 'sano':
-            # Verificar si tiene criterios de riesgo (APGAR/Peso)
             es_riesgoso = (
                 paciente.apgar_1_min < 7 or 
                 paciente.apgar_5_min < 7 or 
                 paciente.peso < 2.5 or 
                 paciente.peso > 4.0
             )
-            
-            # Si es riesgoso y el médico NO ha marcado el "Check" de revisado
             if es_riesgoso and not paciente.alerta_revisada:
-                messages.error(request, "⛔ ACCIÓN DENEGADA: El Recién Nacido tiene criterios de riesgo. Debe validar la alerta clínica antes de dar el alta.")
+                messages.error(request, "⛔ ACCIÓN DENEGADA: El RN tiene criterios de riesgo no validados.")
                 return redirect('altas:panel_medico')
-        # ------------------------------------
     
-    # Si pasa las validaciones, guardamos el cambio
     paciente.estado_salud = nuevo_estado
     paciente.save()
     
@@ -105,7 +94,6 @@ def cambiar_estado_salud(request, tipo_paciente, pk):
 @login_required
 @medico_requerido
 def marcar_alerta_revisada(request, tipo, pk):
-    """Marca una alerta como revisada."""
     if tipo == 'parto':
         obj = get_object_or_404(Parto, pk=pk)
     elif tipo == 'rn':
@@ -120,10 +108,7 @@ def marcar_alerta_revisada(request, tipo, pk):
 @login_required
 @medico_requerido
 def alertas_clinicas(request):
-    """Vista de alertas (Solo muestra las NO revisadas)"""
-    rn_criticos = RecienNacido.objects.filter(
-        alerta_revisada=False
-    ).filter(
+    rn_criticos = RecienNacido.objects.filter(alerta_revisada=False).filter(
         Q(apgar_1_min__lt=7) | Q(apgar_5_min__lt=7) | Q(peso__lt=2.5) | Q(peso__gt=4.0)
     ).select_related('parto', 'parto__madre').order_by('-fecha_registro')
 
@@ -152,28 +137,23 @@ def crear_alta(request):
             alta = form.save()
             alta.validar_registros()
             
+            # Cambiar estado interno del paciente a "Alta Médica" (esperando cierre admin)
             if alta.madre:
                 alta.madre.estado_alta = 'alta_medica'
                 alta.madre.save()
             if alta.recien_nacido:
                 alta.recien_nacido.estado_alta = 'alta_medica'
                 alta.recien_nacido.save()
-                
-            # Auto-firma para médicos
-            if request.user.rol == 'medico' or request.user.rol == 'jefatura':
-                alta.medico_confirma = request.user.get_full_name() or request.user.username
-                alta.alta_clinica_confirmada = True
-                alta.estado = 'alta_clinica'
-                alta.save()
-                messages.success(request, 'Alta generada y firmada automáticamente.')
-            else:
-                messages.success(request, 'Alta generada pendiente de firma.')
-                
+            
+   
+            messages.success(request, 'Alta generada correctamente. Proceda a revisarla y firmarla en la lista de pendientes.')
+            
+            # Redirigir al Panel Médico para seguir gestionando pacientes
             return redirect('altas:panel_medico')
     else:
         form = CrearAltaForm(initial=initial_data)
     
-    # Datos para JS
+    # Datos para JS (FILTRO DINÁMICO)
     rns_por_madre = {}
     partos_por_madre = {}
     
@@ -182,8 +162,13 @@ def crear_alta(request):
         madre_id = rn.parto.madre.id
         if madre_id not in rns_por_madre: rns_por_madre[madre_id] = []
         rns_por_madre[madre_id].append({'id': rn.id, 'nombre': str(rn)})
-        
-    partos = Parto.objects.filter(estado_alta='hospitalizado')
+    
+    # Intenta filtrar partos hospitalizados si el campo existe, si no, trae todos
+    try:
+        partos = Parto.objects.filter(estado_alta='hospitalizado')
+    except:
+        partos = Parto.objects.all()
+
     for parto in partos:
         if parto.madre_id not in partos_por_madre: partos_por_madre[parto.madre_id] = []
         partos_por_madre[parto.madre_id].append({'id': parto.id, 'nombre': str(parto)})
@@ -209,7 +194,6 @@ def lista_altas(request):
         if estado:
             altas = altas.filter(estado=estado)
     
-    # Estadísticas para la lista
     qs_global = Alta.objects.all()
     stats = {
         'en_proceso': qs_global.exclude(estado='completada').count(),
@@ -260,7 +244,7 @@ def confirmar_alta_clinica(request, pk):
     return render(request, 'altas/confirmar_alta.html', {'alta': alta, 'form': form, 'tipo_confirmacion': 'clínica'})
 
 @login_required
-@rol_requerido('administrativo')
+@rol_requerido('administrativo', 'jefatura')
 def confirmar_alta_administrativa(request, pk):
     alta = get_object_or_404(Alta, pk=pk)
     if not alta.puede_confirmar_alta_administrativa():
@@ -274,6 +258,10 @@ def confirmar_alta_administrativa(request, pk):
             if form.cleaned_data.get('observaciones_administrativas'):
                 alta.observaciones += f"\n[Admin]: {form.cleaned_data['observaciones_administrativas']}"
             alta.save()
+            try:
+                generar_certificado_pdf(alta)
+                messages.info(request, 'Alta completada.')
+            except: pass
             return redirect('altas:detalle_alta', pk=pk)
     else:
         form = ConfirmarAltaAdministrativaForm(initial={'administrativo_nombre': nombre})
@@ -282,7 +270,7 @@ def confirmar_alta_administrativa(request, pk):
 @login_required
 def historial_altas(request):
     altas = Alta.objects.all().order_by('-fecha_creacion')
-    # Recalcular stats para historial
+    
     en_proceso = altas.filter(alta_clinica_confirmada=False).count()
     pendientes = altas.filter(alta_clinica_confirmada=True, alta_administrativa_confirmada=False).count()
     completadas = altas.filter(estado='completada').count()
@@ -295,7 +283,7 @@ def exportar_excel(request):
     return exportar_altas_excel(Alta.objects.all())
 
 @login_required
-@rol_requerido('administrativo', 'supervisor') 
+@rol_requerido('administrativo', 'jefatura', 'recepcionista', 'supervisor')
 def descargar_certificado(request, pk):
     alta = get_object_or_404(Alta, pk=pk)
     return generar_certificado_pdf(alta)
