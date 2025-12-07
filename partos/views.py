@@ -2,11 +2,18 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from datetime import timedelta
 from .models import Parto, Aborto
-from .forms import PartoForm, DerivacionAbortoForm, ResolverAbortoForm
+from pacientes.models import Madre
+from recien_nacidos.models import RecienNacido
+
+from .forms import PartoForm, DerivacionAbortoForm, ResolverAbortoForm, FiltroTurnoForm
+
 from usuarios.decorators import rol_requerido, medico_requerido
+
 from usuarios.models import Usuario
 from app.models import Notificacion
+
 # ==========================================
 # GESTIÓN DE PARTOS (MATRONA)
 # ==========================================
@@ -27,8 +34,6 @@ def registrar_parto(request):
             )
             return redirect('app:home')
         else:
-            # --- NUEVO: NOTIFICACIÓN DE ERROR ---
-            # Si la validación clean_madre falla (ya tiene parto o aborto), mostramos la alerta aquí
             if 'madre' in form.errors:
                 messages.error(request, f"⛔ ERROR: {form.errors['madre'][0]}")
             else:
@@ -64,7 +69,6 @@ def mis_registros_clinicos(request):
         if ahora.hour < 8:
             fecha_seleccionada = ahora.date() - timedelta(days=1)
 
-    # Procesar formulario de filtro si viene en la URL (GET)
     form_filtro = FiltroTurnoForm(request.GET or None)
     
     if form_filtro.is_valid():
@@ -77,7 +81,6 @@ def mis_registros_clinicos(request):
         form_filtro = FiltroTurnoForm(initial={'fecha': fecha_seleccionada, 'turno': turno_seleccionado})
 
     # Calcular rangos exactos según la selección
-    # Usamos la fecha seleccionada como base
     base_time = timezone.datetime.combine(fecha_seleccionada, timezone.datetime.min.time())
     base_time = timezone.make_aware(base_time)
 
@@ -85,17 +88,17 @@ def mis_registros_clinicos(request):
         inicio_turno = base_time.replace(hour=8, minute=0)
         fin_turno = base_time.replace(hour=20, minute=0)
         nombre_turno = "Día"
-    else: # Noche
+    else: 
         inicio_turno = base_time.replace(hour=20, minute=0)
-        # El turno noche termina al día siguiente
         fin_turno = (base_time + timedelta(days=1)).replace(hour=8, minute=0)
         nombre_turno = "Noche"
 
     # Consultas filtradas
+    # A. FICHAS COMPLETADAS (Cambio de Lógica: Responsable Clínico)
     madres = Madre.objects.filter(
-        creado_por=request.user,
-        fecha_ingreso__range=(inicio_turno, fin_turno)
-    ).order_by('-fecha_ingreso')
+        responsable_clinico=request.user,
+        fecha_actualizacion__range=(inicio_turno, fin_turno)
+    ).order_by('-fecha_actualizacion')
 
     partos = Parto.objects.filter(
         creado_por=request.user,
@@ -120,7 +123,7 @@ def mis_registros_clinicos(request):
     }
 
     context = {
-        'form_filtro': form_filtro, # Enviamos el form a la plantilla
+        'form_filtro': form_filtro,
         'nombre_turno': nombre_turno,
         'fecha_actual': fecha_seleccionada,
         'inicio_turno': inicio_turno,
@@ -133,6 +136,8 @@ def mis_registros_clinicos(request):
     }
     
     return render(request, 'partos/mi_turno.html', context)
+
+
 # ==========================================
 # GESTIÓN DE ABORTOS / IVE
 # ==========================================
@@ -153,7 +158,7 @@ def derivar_aborto(request):
             caso.madre.save()
             
             # --- 2. NOTIFICAR URGENTE A MÉDICOS ---
-            medicos = Usuario.objects.filter(rol__in=['medico', 'jefatura'])
+            medicos = Usuario.objects.filter(rol='medico')
             notificaciones = []
             
             mensaje_alerta = f"Paciente: {caso.madre.nombre} ({caso.madre.rut})\nMotivo: {caso.observacion_matrona}"
@@ -163,8 +168,8 @@ def derivar_aborto(request):
                     usuario=medico,
                     titulo="🚨 DERIVACIÓN URGENTE: IVE/ABORTO",
                     mensaje=mensaje_alerta,
-                    tipo='urgente', # Esto lo pone en rojo en el dashboard
-                    link=f"/partos/resolver-ive/{caso.pk}/" # Link directo a resolver
+                    tipo='urgente',
+                    link=f"/partos/resolver-ive/{caso.pk}/"
                 ))
             
             Notificacion.objects.bulk_create(notificaciones)
@@ -212,7 +217,8 @@ def resolver_aborto(request, pk):
             caso.madre.estado_salud = 'observacion' 
             caso.madre.save()
             
-            messages.success(request, 'Procedimiento registrado. Paciente derivada a Sala de Hospitalización.')
+            messages.success(request, 'Procedimiento registrado. Paciente derivada a Sala de Hospitalización (Observación).')
+            
             return redirect('app:home')
     else:
         form = ResolverAbortoForm(instance=caso)

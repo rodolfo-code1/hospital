@@ -7,7 +7,7 @@ from .forms import MadreForm, MadreRecepcionForm
 from usuarios.decorators import rol_requerido
 from usuarios.models import Usuario
 from app.models import Notificacion
-# --- IMPORTS NUEVOS PARA FILTRADO ---
+
 from partos.models import Aborto, Parto
 from recien_nacidos.models import RecienNacido
 import qrcode
@@ -18,17 +18,14 @@ from django.urls import reverse
 # ==========================================
 # VISTA RECEPCIONISTA: ADMISIÓN + ALERTA
 # ==========================================
-# ... (imports y resto del código) ...
+
 
 @login_required
 def registrar_madre_recepcion(request):
-    # ... (validación de rol igual) ...
 
     if request.method == 'POST':
         form = MadreRecepcionForm(request.POST)
-        # lógica de reingreso igual... (omitida para brevedad, mantén tu lógica de reingreso)
-        # Asumimos flujo de NUEVO INGRESO o REINGRESO que usa el form:
-        
+    
         if form.is_valid():
             madre = form.save(commit=False)
             madre.creado_por = request.user

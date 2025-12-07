@@ -75,6 +75,15 @@ class Madre(models.Model):
         verbose_name="Estado de Salud"
     )
 
+    responsable_clinico = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='fichas_clinicas_completadas',
+        verbose_name="Matrona Responsable"
+    )
+
     class Meta:
         verbose_name = "Madre"
         verbose_name_plural = "Madres"

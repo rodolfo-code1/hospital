@@ -161,16 +161,5 @@
     </div>
 </div>
 
-<script>
-    document.getElementById('id_fecha_nacimiento').addEventListener('change', function() {
-        const fechaNac = new Date(this.value);
-        const hoy = new Date();
-        if (!isNaN(fechaNac)) {
-            let edad = hoy.getFullYear() - fechaNac.getFullYear();
-            const m = hoy.getMonth() - fechaNac.getMonth();
-            if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) { edad--; }
-            document.getElementById('id_edad').value = edad;
-        }
-    });
 </script>
 {% endblock %}
