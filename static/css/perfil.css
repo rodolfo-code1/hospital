@@ -1,0 +1,44 @@
+/* Página */
+.perfil-page {
+    max-width: 900px;
+}
+
+/* Header degradado */
+.perfil-header {
+    background: linear-gradient(90deg, #148795, #0fb8ae, #11c9b8);
+    border-radius: 12px 12px 0 0;
+    padding: 1rem 1.5rem;
+}
+
+/* Tabla de perfil */
+.perfil-table th {
+    width: 35%;
+    background: #f1f5f9;
+    color: #01224f;
+    font-weight: 600;
+}
+
+.perfil-table td {
+    background: #ffffff;
+    color: #334155;
+}
+
+/* Caja de permisos */
+.perfil-permisos {
+    background: rgba(20,135,149,0.05);
+    border: 1px solid rgba(20,135,149,0.1);
+    border-radius: 10px;
+}
+
+/* Botón */
+.btn-outline-primary {
+    border-radius: 10px;
+    padding: .6rem;
+    transition: .25s;
+}
+
+.btn-outline-primary:hover {
+    background: #148795 !important;
+    border-color: #148795 !important;
+    color: #fff !important;
+}
