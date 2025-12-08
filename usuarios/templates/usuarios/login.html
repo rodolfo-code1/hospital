@@ -1,72 +1,67 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
 
 {% block title %}Iniciar Sesión - Sistema Trazabilidad{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card shadow">
-            <div class="card-header bg-primary text-white text-center">
-                <h3><i class="bi bi-hospital"></i> Sistema de Trazabilidad</h3>
-                <p class="mb-0">Iniciar Sesión</p>
-            </div>
-            <div class="card-body p-4">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label for="username" class="form-label">
-                            <i class="bi bi-person"></i> RUT
-                        </label>
-                        <input type="text" 
-                               class="form-control form-control-lg" 
-                               id="username" 
-                               name="username" 
-                               required 
-                               autofocus
-                               placeholder="Ingrese su RUT (sin puntos ni guión)">
-                        <small class="form-text text-muted">Ejemplo: 123456789</small>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label for="password" class="form-label">
-                            <i class="bi bi-lock"></i> Contraseña
-                        </label>
-                        <input type="password" 
-                               class="form-control form-control-lg" 
-                               id="password" 
-                               name="password" 
-                               required
-                               placeholder="Ingrese su contraseña">
-                    </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
-                        </button>
-                    </div>
-                </form>
-            </div>
-            <div class="card-footer text-center text-muted">
-                <p class="mb-2">
-                    ¿No tienes cuenta? <a href="{% url 'usuarios:registro' %}" class="fw-bold text-success">Crear cuenta aquí</a>
-                </p>
-                <small>
-                    <i class="bi bi-shield-check"></i> Sistema seguro con roles diferenciados
-                </small>
+<div class="login-wrapper d-flex justify-content-center align-items-center">
+    <div class="login-card shadow">
+        <div class="login-left text-white d-flex flex-column justify-content-center">
+            <h2 class="fw-bold">Bienvenido</h2>
+            <p class="mt-2">Sistema de Trazabilidad</p>
+            <div class="mt-4">
+                <h6 class="fw-semibold text-white-50">Roles disponibles:</h6>
+                <ul class="login-roles mt-2">
+                    <li><strong>Recepcionista:</strong> Registro inicial de ingreso de madres</li>
+                    <li><strong>Médico:</strong> Confirma altas clínicas</li>
+                    <li><strong>Matrona:</strong> Registra partos y RN</li>
+                    <li><strong>Administrativo:</strong> Confirma altas administrativas</li>
+                    <li><strong>Supervisor:</strong> Auditoría de procesos y gestión</li>
+                    <li><strong>Encargado TI:</strong> Gestión de usuarios y mantenimiento</li>
+                </ul>
             </div>
         </div>
-        
-        
-        <div class="alert alert-info mt-3">
-            <strong><i class="bi bi-info-circle"></i> Roles disponibles:</strong>
-            <ul class="mb-0 mt-2 small">
-                <li><strong>Médico:</strong> Confirma altas clínicas</li>
-                <li><strong>Matrona:</strong> Registra partos y RN</li>
-                <li><strong>Administrativo:</strong> Confirma altas administrativas</li>
-                <li><strong>Supervisor:</strong> Auditoría de procesos y gestión</li>
-                <li><strong>Encargado de TI:</strong> Gestión de usuarios y mantenimiento</li>
-            </ul>
+        <div class="login-right">
+            <h4 class="fw-bold mb-4 text-center">Iniciar Sesión</h4>
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">RUT</label>
+                    <input
+                        name="username"
+                        type="text"
+                        class="form-control form-control-lg"
+                        placeholder="Ingrese RUT sin puntos ni guión"
+                        required
+                    >
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Contraseña</label>
+                    <input
+                        name="password"
+                        type="password"
+                        class="form-control form-control-lg"
+                        placeholder="Ingrese su contraseña"
+                        required
+                    >
+                </div>
+                <button type="submit" class="btn btn-ingresar w-100 mt-3 fw-semibold">
+                    <i class="bi bi-box-arrow-in-right"></i> Ingresar
+                </button>
+            </form>
+            <p class="text-center small mt-3">
+                <a href="{% url 'usuarios:solicitar_reset_pw' %}" class="fw-semibold text-primary">
+                    ¿Olvidaste tu contraseña?
+                </a>
+            </p>
+            <p class="text-center small text-secondary">
+                <i class="bi bi-shield-check"></i>
+                Plataforma segura con roles diferenciados
+            </p>
         </div>
     </div>
 </div>
