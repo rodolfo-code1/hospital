@@ -162,4 +162,53 @@
 </div>
 
 </script>
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputFecha = document.getElementById('id_fecha_nacimiento');
+        const inputEdad = document.getElementById('id_edad');
+
+        if (inputFecha && inputEdad) {
+            // Función de cálculo
+            function calcularEdad() {
+                const valorFecha = inputFecha.value; // Formato YYYY-MM-DD
+                
+                if (valorFecha) {
+                    const partes = valorFecha.split('-'); // [2000, 05, 15]
+                    const anioNac = parseInt(partes[0]);
+                    const mesNac = parseInt(partes[1]) - 1; // 0-11
+                    const diaNac = parseInt(partes[2]);
+
+                    const hoy = new Date();
+                    let edad = hoy.getFullYear() - anioNac;
+                    
+                    const mesActual = hoy.getMonth();
+                    const diaActual = hoy.getDate();
+
+                    // Ajuste si no ha cumplido años
+                    if (mesActual < mesNac || (mesActual === mesNac && diaActual < diaNac)) {
+                        edad--;
+                    }
+
+                    // Evitar edades negativas o absurdas por error de tipeo
+                    if (edad < 0) edad = 0;
+                    
+                    inputEdad.value = edad;
+                } else {
+                    inputEdad.value = '';
+                }
+            }
+
+            // Escuchar cambios (teclado y mouse)
+            inputFecha.addEventListener('change', calcularEdad);
+            inputFecha.addEventListener('blur', calcularEdad); // Por si acaso
+            
+            // Calcular al cargar (si es edición)
+            if (inputFecha.value) {
+                calcularEdad();
+            }
+        }
+    });
+</script>
+{% endblock %}
 {% endblock %}

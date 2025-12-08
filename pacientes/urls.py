@@ -7,19 +7,19 @@ app_name = 'pacientes'
 urlpatterns = [
     # --- FLUJO DE RECEPCIÓN ---
     path('admision/', views.registrar_madre_recepcion, name='admision_madre'),
+    path('historial/', views.historial_recepcion, name='historial_recepcion'), # <--- ESTA FALTABA
     
     # --- FLUJO CLÍNICO (MATRONA) ---
     path('lista/', views.lista_pacientes, name='lista_pacientes'),
+    path('ficha/<int:pk>/', views.ver_ficha_clinica, name='ver_ficha'),
+    path('editar/<int:pk>/', views.editar_ficha_clinica, name='editar_ficha'),
     
-    path('ficha/<int:pk>/', views.ver_ficha_clinica, name='ver_ficha'),     # Ver (Solo lectura)
-    path('editar/<int:pk>/', views.editar_ficha_clinica, name='editar_ficha'), # Editar (Modificar)
-    
-    # --- RUTAS DE COMPATIBILIDAD (Redirecciones) ---
+    # --- RUTAS DE COMPATIBILIDAD ---
     path('registrar/', views.registrar_madre, name='registrar_madre'),
     path('buscar/', views.buscar_madre, name='buscar_madre'),
     path('completar/<int:pk>/', views.completar_madre, name='completar_madre'),
     
-    # --- RUTAS ADMINISTRATIVAS (QR y Brazaletes) ---
+    # --- RUTAS ADMINISTRATIVAS (QR) ---
     path('admin/buscar/', views.admin_buscar_paciente, name='admin_buscar_paciente'),
     path('admin/brazalete/<int:pk>/', views.ver_brazalete, name='ver_brazalete'),
     path('admin/qr-img/<int:pk>/', views.generar_qr_imagen, name='generar_qr_imagen'),
