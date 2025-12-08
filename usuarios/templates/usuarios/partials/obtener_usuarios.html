@@ -1,0 +1,53 @@
+{% for u in usuarios %}
+<tr>
+    <td class="fw-semibold">{{ u.rut }}</td>
+    <td>
+        {{ u.get_full_name }}
+        <br>
+        <small class="text-muted">{{ u.email|default:"Sin email" }}</small>
+    </td>
+
+    <td>
+        {% if u.rol == 'matrona' %}
+            <span class="badge badge-matrona px-3 py-2">{{ u.get_rol_display }}</span>
+        {% elif u.rol == 'medico' %}
+            <span class="badge badge-medico px-3 py-2">{{ u.get_rol_display }}</span>
+        {% elif u.rol == 'encargado_ti' %}
+            <span class="badge badge-ti px-3 py-2">{{ u.get_rol_display }}</span>
+        {% elif u.rol == 'supervisor' %}
+            <span class="badge badge-supervisor px-3 py-2">{{ u.get_rol_display }}</span>
+        {% elif u.rol == 'administrativo' %}
+            <span class="badge badge-administrador px-3 py-2">{{ u.get_rol_display }}</span>
+        {% elif u.rol == 'recepcionista' %}
+            <span class="badge badge-recepcionista px-3 py-2">{{ u.get_rol_display }}</span>
+        {% else %}
+            <span class="badge bg-secondary px-3 py-2">{{ u.get_rol_display }}</span>
+        {% endif %}
+    </td>
+
+    <td>
+        {% if u.is_active %}
+            <span class="badge bg-success px-3 py-2">Activo</span>
+        {% else %}
+            <span class="badge bg-danger px-3 py-2">Inactivo</span>
+        {% endif %}
+    </td>
+
+    <td class="text-muted">
+        {{ u.last_login|date:"d/m/Y H:i"|default:"Nunca" }}
+    </td>
+
+    <td class="text-end">
+        <a href="{% url 'usuarios:editar_usuario' u.pk %}"
+           class="btn btn-sm btn-outline-hcm">
+           <i class="bi bi-pencil-square"></i> Editar
+        </a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="6" class="text-center py-4 text-muted">
+        No hay usuarios encontrados.
+    </td>
+</tr>
+{% endfor %}

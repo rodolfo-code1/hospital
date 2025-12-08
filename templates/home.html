@@ -30,8 +30,10 @@
                                   <span class="badge badge-ti">{{ user.get_rol_display }}</span>
                               {% elif user.rol == 'supervisor' %}
                                   <span class="badge badge-supervisor">{{ user.get_rol_display }}</span>
-                              {% elif user.rol == 'administrador' %}
+                              {% elif user.rol == 'administrativo' %}
                                   <span class="badge badge-administrador">{{ user.get_rol_display }}</span>
+                              {% elif user.rol == 'recepcionista' %}
+                                  <span class="badge badge-recepcionista">{{ user.get_rol_display }}</span>
                               {% else %}
                                   <span class="badge bg-light text-dark">{{ user.get_rol_display }}</span>
                               {% endif %}
@@ -67,6 +69,10 @@
   
           {% if user.rol == 'encargado_ti' %}
               {% include 'componentes/panel/ti.html' %}
+          {% endif %}
+
+          {% if user.rol == 'recepcionista' %}
+              {% include 'componentes/panel/recepcionista.html' %}
           {% endif %}
       </div>
   </div>

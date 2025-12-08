@@ -54,11 +54,8 @@
                         </td>
                     </tr>
                 </table>
-
-                <!-- PERMISOS -->
                 <div class="perfil-permisos p-3">
                     <strong class="text-dark"><i class="bi bi-unlock"></i> Permisos de tu rol:</strong>
-
                     <ul class="mt-2 mb-0">
                         {% if user.rol == 'medico' %}
                             <li>Registrar partos y recién nacidos</li>
@@ -89,14 +86,11 @@
                         {% endif %}
                     </ul>
                 </div>
-
-                <!-- BOTON -->
                 <div class="d-grid mt-4">
                     <a href="{% url 'app:home' %}" class="btn btn-outline-primary fw-semibold">
                         <i class="bi bi-arrow-left"></i> Volver al Inicio
                     </a>
                 </div>
-
             </div>
         </div>
     </div>

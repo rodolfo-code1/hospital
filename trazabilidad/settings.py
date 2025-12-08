@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'usuarios',
     'pacientes',
     'partos',
@@ -50,6 +51,8 @@ INSTALLED_APPS = [
     'altas',
     'reportes',
 ]
+
+SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -162,3 +165,13 @@ MESSAGE_TAGS = {
 LOGIN_URL = 'usuarios:login'
 LOGIN_REDIRECT_URL = 'app:home'
 LOGOUT_REDIRECT_URL = 'usuarios:login'
+
+# Configuración de email - Mailtrap
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = os.getenv("EMAIL_PORT")
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
+EMAIL_FROM = os.getenv("EMAIL_FROM", "no-reply@sistemahcm.cl")
+

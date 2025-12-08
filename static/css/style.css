@@ -65,10 +65,16 @@ main {
   color: #fff;
 }
 
+.badge-recepcionista {
+  background-color: #3b82f6 !important;
+  color: #fff !important;
+}
+
 .badge-administrador {
   background-color: #6f42c1;
   color: #fff;
 }
+
 
 /* Footer */
 footer {

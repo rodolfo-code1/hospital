@@ -20,6 +20,29 @@
             <i class="bi bi-person-plus"></i> Nuevo Usuario
         </a>
     </div>
+
+    <!-- 🔍 BUSCADOR -->
+    <div class="d-flex justify-content-end mb-3 w-100">
+        <div class="search-wrapper d-flex align-items-center">
+            <input
+                type="text"
+                id="searchUser"
+                name="q"
+                class="form-control search-input"
+                placeholder="Buscar por Nombre, Rut, Rol o Email"
+                autocomplete="off"
+            >
+
+            <button class="btn btn-search" type="button">
+                <i class="bi bi-search"></i>
+            </button>
+
+            <i class="bi bi-info-circle ms-2 text-muted"
+              data-bs-toggle="tooltip"
+              title="Puedes buscar por: RUT, nombre, apellido, rol y correo"></i>
+        </div>
+    </div>
+
     <div class="card shadow-sm table-card">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -34,63 +57,25 @@
                             <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {% for u in usuarios %}
-                        <tr>
-                            <td class="fw-semibold">{{ u.rut }}</td>
-                            <td>
-                                {{ u.get_full_name }}
-                                <br>
-                                <small class="text-muted">{{ u.email|default:"Sin email" }}</small>
-                            </td>
-                            <td>
-                                {% if u.rol == 'matrona' %}
-                                    <span class="badge badge-matrona px-3 py-2">{{ u.get_rol_display }}</span>
-                                {% elif u.rol == 'medico' %}
-                                    <span class="badge badge-medico px-3 py-2">{{ u.get_rol_display }}</span>
-                                {% elif u.rol == 'encargado_ti' %}
-                                    <span class="badge badge-ti px-3 py-2">{{ u.get_rol_display }}</span>
-                                {% elif u.rol == 'supervisor' %}
-                                    <span class="badge badge-supervisor px-3 py-2">{{ u.get_rol_display }}</span>
-                                {% elif u.rol == 'administrador' %}
-                                    <span class="badge badge-administrador px-3 py-2">{{ u.get_rol_display }}</span>
-                                {% else %}
-                                    <span class="badge bg-secondary px-3 py-2">{{ u.get_rol_display }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if u.is_active %}
-                                    <span class="badge bg-success px-3 py-2">Activo</span>
-                                {% else %}
-                                    <span class="badge bg-danger px-3 py-2">Inactivo</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-muted">
-                                {{ u.last_login|date:"d/m/Y H:i"|default:"Nunca" }}
-                            </td>
-                            <td class="text-end">
-                                <a href="{% url 'usuarios:editar_usuario' u.pk %}"
-                                   class="btn btn-sm btn-outline-hcm">
-                                   <i class="bi bi-pencil-square"></i> Editar
-                                </a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
-                                No hay usuarios registrados.
-                            </td>
-                        </tr>
-                        {% endfor %}
+
+                    <!-- ⬇️ AQUI SE INSERTA AJAX -->
+                    <tbody id="tbodyUsuarios">
+                        {% include 'usuarios/partials/obtener_usuarios.html' %}
                     </tbody>
+
                 </table>
             </div>
         </div>
     </div>
+
     <div class="mt-4">
         <a href="{% url 'app:home' %}" class="btn btn-volver">
             <i class="bi bi-arrow-left"></i> Volver al Panel
         </a>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/usuarios_busqueda.js' %}"></script>
 {% endblock %}

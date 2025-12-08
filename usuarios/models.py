@@ -9,6 +9,7 @@ class Usuario(AbstractUser):
         ('administrativo', 'Administrativo'),
         ('supervisor', 'Supervisor'),
         ('encargado_ti', 'Encargado TI'),
+        ('recepcionista', 'Recepcionista')
     ]
     rol = models.CharField(
         max_length=20,
@@ -46,3 +47,6 @@ class Usuario(AbstractUser):
 
     def es_encargado_ti(self):
         return self.rol == 'encargado_ti'
+      
+    def es_recepcionista(self):
+        return self.rol == 'recepcionista'
