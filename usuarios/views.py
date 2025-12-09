@@ -14,7 +14,7 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.db.models import Q
 from .forms import RegistroUsuarioForm,EditarUsuarioForm, ResetPasswordRUTForm
-from .models import Usuario, AudiotoriaLogin
+from .models import Usuario, AuditoriaLogin
 from .decorators import encargado_ti_requerido
 from django.http import HttpRequest
 
