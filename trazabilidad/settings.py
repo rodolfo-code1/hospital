@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'recien_nacidos',
     'altas',
     'reportes',
+    'respaldos',
 ]
 
 SITE_ID = 1

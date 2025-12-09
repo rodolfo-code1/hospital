@@ -28,7 +28,96 @@
             <div class="display-4 text-secondary mb-2"><i class="bi bi-database"></i></div>
             <h6 class="card-title fw-bold">Respaldos</h6>
             <p class="card-text small text-muted">Copias de seguridad y restauración.</p>
-            <button class="btn btn-outline-secondary btn-sm w-100" disabled>Configurar</button>
+            <button 
+                class="btn btn-outline-secondary btn-sm w-100"
+                data-bs-toggle="modal"
+                data-bs-target="#modalRespaldo">
+                <i class="bi bi-cloud-download"></i> Generar Respaldo
+            </button>
         </div>
     </div>
 </div>
+
+<!-- Modal Confirmación Respaldo -->
+<div class="modal fade" id="modalRespaldo" tabindex="-1" aria-labelledby="modalRespaldoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+      
+      <div class="modal-header bg-secondary text-white">
+        <h5 class="modal-title" id="modalRespaldoLabel">
+          <i class="bi bi-database"></i> Confirmar Respaldo
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body text-center">
+
+        <p class="mb-1">¿Estás seguro de generar un respaldo de la base de datos?</p>
+        <small class="text-muted">Se descargará un archivo <strong>.sql</strong> con toda la información del sistema.</small>
+
+
+        <!-- Loader centrado (invisible al inicio) -->
+        <div id="loaderRespaldo" class="d-none py-2">
+          <div class="spinner-border text-secondary" role="status"></div>
+          <p class="small text-muted mt-2 mb-0">Generando respaldo, por favor espera...</p>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+
+        <button class="btn btn-secondary" id="btnGenerar">
+          <i class="bi bi-cloud-download"></i> Generar ahora
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+document.getElementById("btnGenerar").addEventListener("click", async () => {
+
+    const btn = document.getElementById("btnGenerar");
+    const loader = document.getElementById("loaderRespaldo");
+
+    // Mostrar loader y desactivar botón
+    loader.classList.remove("d-none");
+    btn.disabled = true;
+
+    // NO cerrar modal aún
+    // Solo desactivar acciones mientras genera
+
+    const url = "{% url 'respaldos:generar_respaldo' %}";
+
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            setTimeout(() => window.location.reload(), 1000);
+            return;
+        }
+
+        // Descargar archivo
+        const blob = await response.blob();
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `respaldo_${new Date().toISOString().slice(0,16).replace(":","")}.sql`;
+        link.click();
+
+        // Cerrar modal después de descarga
+        bootstrap.Modal.getInstance(document.getElementById("modalRespaldo")).hide();
+
+        // Mostrar mensaje
+        setTimeout(() => window.location.reload(), 1500);
+
+    } catch (error) {
+        setTimeout(() => window.location.reload(), 1000);
+    }
+});
+</script>

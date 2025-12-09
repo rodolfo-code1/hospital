@@ -1,5 +1,3 @@
-// static/js/usuarios_busqueda.js
-
 document.addEventListener("DOMContentLoaded", () => {
 
     const input = document.getElementById('searchUser');
@@ -8,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let debounceTimer = null;
 
-    // 🟦 función reutilizable para fetch
+    // función reutilizable para fetch
     function buscar(q) {
         fetch(`/usuarios/gestion/obtener-usuarios/?q=${q}`)
             .then(response => response.json())
@@ -18,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .catch(error => console.error("Error en búsqueda AJAX:", error));
     }
 
-    // 🟦 Evento al escribir
+    // Evento al escribir
     input.addEventListener('keyup', function () {
         clearTimeout(debounceTimer);
 
@@ -33,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }, 300);
     });
 
-    // 🟦 Evento al presionar el botón lupa
+    // Evento al presionar el botón lupa
     btnSearch.addEventListener('click', () => {
         buscar(input.value.trim());
     });
