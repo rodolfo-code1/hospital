@@ -2,9 +2,17 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from datetime import timedelta
 from .models import Parto, Aborto
-from .forms import PartoForm, DerivacionAbortoForm, ResolverAbortoForm
+from pacientes.models import Madre
+from recien_nacidos.models import RecienNacido
+
+from .forms import PartoForm, DerivacionAbortoForm, ResolverAbortoForm, FiltroTurnoForm
+
 from usuarios.decorators import rol_requerido, medico_requerido
+
+from usuarios.models import Usuario
+from app.models import Notificacion
 
 # ==========================================
 # GESTIÓN DE PARTOS (MATRONA)
@@ -26,8 +34,6 @@ def registrar_parto(request):
             )
             return redirect('app:home')
         else:
-            # --- NUEVO: NOTIFICACIÓN DE ERROR ---
-            # Si la validación clean_madre falla (ya tiene parto o aborto), mostramos la alerta aquí
             if 'madre' in form.errors:
                 messages.error(request, f"⛔ ERROR: {form.errors['madre'][0]}")
             else:
@@ -47,19 +53,89 @@ def registrar_parto(request):
 @rol_requerido('matrona')
 def mis_registros_clinicos(request):
     """
-    Vista exclusiva para Matronas: Muestra SOLO sus registros.
+    Panel de Turno: Muestra registros por usuario, fecha y turno específico.
+    Permite navegar al pasado.
     """
-    registros = Parto.objects.filter(creado_por=request.user).select_related('madre').order_by('-fecha_registro')
+    # Valores por defecto (Ahora)
+    ahora = timezone.localtime(timezone.now())
+    fecha_seleccionada = ahora.date()
+    
+    # Determinar turno actual por defecto
+    if 8 <= ahora.hour < 20:
+        turno_seleccionado = 'dia'
+    else:
+        turno_seleccionado = 'noche'
+        # Si es madrugada (00:00 - 08:00), el turno pertenece a la fecha de "ayer"
+        if ahora.hour < 8:
+            fecha_seleccionada = ahora.date() - timedelta(days=1)
 
-    fecha_busqueda = request.GET.get('fecha')
-    if fecha_busqueda:
-        registros = registros.filter(fecha_registro__date=fecha_busqueda)
+    form_filtro = FiltroTurnoForm(request.GET or None)
+    
+    if form_filtro.is_valid():
+        if form_filtro.cleaned_data['fecha']:
+            fecha_seleccionada = form_filtro.cleaned_data['fecha']
+        if form_filtro.cleaned_data['turno']:
+            turno_seleccionado = form_filtro.cleaned_data['turno']
+    else:
+        # Pre-llenar formulario con los defaults calculados
+        form_filtro = FiltroTurnoForm(initial={'fecha': fecha_seleccionada, 'turno': turno_seleccionado})
+
+    # Calcular rangos exactos según la selección
+    base_time = timezone.datetime.combine(fecha_seleccionada, timezone.datetime.min.time())
+    base_time = timezone.make_aware(base_time)
+
+    if turno_seleccionado == 'dia':
+        inicio_turno = base_time.replace(hour=8, minute=0)
+        fin_turno = base_time.replace(hour=20, minute=0)
+        nombre_turno = "Día"
+    else: 
+        inicio_turno = base_time.replace(hour=20, minute=0)
+        fin_turno = (base_time + timedelta(days=1)).replace(hour=8, minute=0)
+        nombre_turno = "Noche"
+
+    # Consultas filtradas
+    # A. FICHAS COMPLETADAS (Cambio de Lógica: Responsable Clínico)
+    madres = Madre.objects.filter(
+        responsable_clinico=request.user,
+        fecha_actualizacion__range=(inicio_turno, fin_turno)
+    ).order_by('-fecha_actualizacion')
+
+    partos = Parto.objects.filter(
+        creado_por=request.user,
+        fecha_registro__range=(inicio_turno, fin_turno)
+    ).select_related('madre').order_by('-fecha_registro')
+
+    rns = RecienNacido.objects.filter(
+        creado_por=request.user,
+        fecha_registro__range=(inicio_turno, fin_turno)
+    ).select_related('parto__madre').order_by('-fecha_registro')
+
+    abortos = Aborto.objects.filter(
+        matrona_derivadora=request.user,
+        fecha_derivacion__range=(inicio_turno, fin_turno)
+    ).select_related('madre').order_by('-fecha_derivacion')
+
+    stats = {
+        'total_madres': madres.count(),
+        'total_partos': partos.count(),
+        'total_rns': rns.count(),
+        'total_abortos': abortos.count(),
+    }
 
     context = {
-        'registros': registros,
-        'fecha_busqueda': fecha_busqueda
+        'form_filtro': form_filtro,
+        'nombre_turno': nombre_turno,
+        'fecha_actual': fecha_seleccionada,
+        'inicio_turno': inicio_turno,
+        'fin_turno': fin_turno,
+        'madres': madres,
+        'partos': partos,
+        'rns': rns,
+        'abortos': abortos,
+        'stats': stats
     }
-    return render(request, 'partos/mis_registros.html', context)
+    
+    return render(request, 'partos/mi_turno.html', context)
 
 
 # ==========================================
@@ -77,15 +153,31 @@ def derivar_aborto(request):
             caso.matrona_derivadora = request.user
             caso.save()
             
-            # Cambiar estado salud de madre a Observación automáticamente
+            # 1. Cambiar estado salud de madre a Observación (Bloqueo preventivo)
             caso.madre.estado_salud = 'observacion'
             caso.madre.save()
             
-            messages.warning(request, f'Caso derivado al equipo médico. Paciente: {caso.madre.nombre}')
+            # --- 2. NOTIFICAR URGENTE A MÉDICOS ---
+            medicos = Usuario.objects.filter(rol='medico')
+            notificaciones = []
+            
+            mensaje_alerta = f"Paciente: {caso.madre.nombre} ({caso.madre.rut})\nMotivo: {caso.observacion_matrona}"
+            
+            for medico in medicos:
+                notificaciones.append(Notificacion(
+                    usuario=medico,
+                    titulo="🚨 DERIVACIÓN URGENTE: IVE/ABORTO",
+                    mensaje=mensaje_alerta,
+                    tipo='urgente',
+                    link=f"/partos/resolver-ive/{caso.pk}/"
+                ))
+            
+            Notificacion.objects.bulk_create(notificaciones)
+            # --------------------------------------
+            
+            messages.warning(request, f'Caso derivado. Se ha enviado una ALERTA a todo el equipo médico.')
             return redirect('app:home')
         else:
-            # --- NUEVO: NOTIFICACIÓN DE ERROR DE BLOQUEO ---
-            # Si clean_madre falla (ya tiene parto o aborto), avisa fuerte a la matrona
             if 'madre' in form.errors:
                 messages.error(request, f"⛔ NO SE PUEDE DERIVAR: {form.errors['madre'][0]}")
             else:
@@ -109,7 +201,6 @@ def panel_abortos(request):
 def resolver_aborto(request, pk):
     """
     Médico confirma el diagnóstico y procedimiento.
-    Al terminar, redirige al PANEL PRINCIPAL.
     """
     caso = get_object_or_404(Aborto, pk=pk)
     
@@ -122,13 +213,12 @@ def resolver_aborto(request, pk):
             caso.estado = 'confirmado'
             caso.save()
             
-            # La paciente queda en observación para evaluación posterior en sala
-            caso.madre.estado_salud = 'observacion'
+            # Dejar en OBSERVACIÓN para evaluación en sala
+            caso.madre.estado_salud = 'observacion' 
             caso.madre.save()
             
             messages.success(request, 'Procedimiento registrado. Paciente derivada a Sala de Hospitalización (Observación).')
             
-            # Volver al Panel Principal
             return redirect('app:home')
     else:
         form = ResolverAbortoForm(instance=caso)

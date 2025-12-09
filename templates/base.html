@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Hospital Hermina Martin{% endblock %}</title>
+    <title>{% block title %}Hospital Herminda Martin{% endblock %}</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css">
-    
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <nav class="navbar navbar-expand-lg shadow-sm py-3 px-5 custom-navbar nav-responsive">
         <div class="container-fluid">
             <a class="navbar-brand fw-bold" href="{% url 'app:home' %}">
                 <i class="bi bi-hospital-fill"></i> Sistema Trazabilidad
@@ -24,30 +24,36 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    {% if user.is_authenticated %}
-                        <li class="nav-item">
+                    {% if user.is_authenticated and request.resolver_match.url_name != 'solicitar_reset_pw' and request.resolver_match.url_name != 'reset_pw_confirm' and request.resolver_match.url_name != 'activar_usuario' and request.resolver_match.url_name != 'crear_password_activacion' %}
+                        <li class="nav-item me-2">
                             <a class="nav-link active" href="{% url 'app:home' %}">
                                 <i class="bi bi-grid-fill"></i> Panel Principal
                             </a> 
                         </li>
-
-                        {% if user.rol == 'encargado_ti' or user.is_staff %}
-                        <li class="nav-item">
-                            <a class="nav-link text-warning" href="/admin/" target="_blank">
-                                <i class="bi bi-gear-fill"></i> Admin Sistema
-                            </a>
-                        </li>
-                        {% endif %}
                     {% endif %}
                 </ul>
                 
                 <ul class="navbar-nav">
-                    {% if user.is_authenticated %}
+                    {% if user.is_authenticated and request.resolver_match.url_name != 'solicitar_reset_pw' and request.resolver_match.url_name != 'reset_pw_confirm' and request.resolver_match.url_name != 'activar_usuario' and request.resolver_match.url_name != 'crear_password_activacion' %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle"></i> 
                             {{ user.get_full_name|default:user.username }}
-                            <span class="badge bg-light text-dark ms-1">{{ user.get_rol_display }}</span>
+                            {% if user.rol == 'matrona' %}
+                                <span class="badge badge-matrona ms-1">{{ user.get_rol_display }}</span>
+                            {% elif user.rol == 'medico' %}
+                                <span class="badge badge-medico ms-1">{{ user.get_rol_display }}</span>
+                            {% elif user.rol == 'encargado_ti' %}
+                                <span class="badge badge-ti ms-1">{{ user.get_rol_display }}</span>
+                            {% elif user.rol == 'supervisor' %}
+                                <span class="badge badge-supervisor ms-1">{{ user.get_rol_display }}</span>
+                            {% elif user.rol == 'administrativo' %}
+                                <span class="badge badge-administrador ms-1">{{ user.get_rol_display }}</span>
+                            {% elif user.rol == 'recepcionista' %}
+                                <span class="badge badge-recepcionista ms-1">{{ user.get_rol_display }}</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark ms-1">{{ user.get_rol_display }}</span>
+                            {% endif %}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
@@ -91,11 +97,11 @@
         {% endblock %}
     </main>
 
-    <footer class="bg-light text-center py-3 mt-5 border-top">
+    <footer class="text-center py-3 border-top">
         <div class="container">
-            <p class="mb-0 text-muted small">
+            <p class="mb-0 small">
                 &copy; 2025 Sistema de Trazabilidad - Hospital Clínico Herminda Martín<br>
-                <span class="text-secondary">Plataforma Segura - Ley 19.628</span>
+                <span class="text-seguridad-footer">Plataforma Segura - Ley 19.628</span>
             </p>
         </div>
     </footer>
@@ -103,31 +109,20 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Buscamos todos los inputs que sean de RUT o Username (Login)
-            const rutInputs = document.querySelectorAll('input[name="rut"], input[name="username"]');
+        // Función de seguridad por si no hay tour en la página actual
+        window.iniciarAsistente = function() {
+            console.log("Tour no disponible en esta vista.");
+        };
 
+        // Formato RUT
+        document.addEventListener("DOMContentLoaded", function() {
+            const rutInputs = document.querySelectorAll('input[name="rut"], input[name="username"]');
             rutInputs.forEach(function(input) {
                 input.addEventListener('input', function(e) {
                     let value = e.target.value.replace(/[^0-9kK]/g, "").toUpperCase();
-                    
-                    // Si está vacío, no hacemos nada
-                    if (value.length === 0) {
-                        e.target.value = "";
-                        return;
-                    }
-
-                    // Si tiene un solo caracter, lo mostramos tal cual
-                    if (value.length === 1) {
-                        e.target.value = value;
-                        return;
-                    }
-
-                    // Separar cuerpo y dígito verificador
+                    if (value.length <= 1) { e.target.value = value; return; }
                     const cuerpo = value.slice(0, -1);
                     const dv = value.slice(-1);
-
-                    // Formatear el cuerpo con puntos
                     let cuerpoFormateado = "";
                     for (let i = cuerpo.length - 1, j = 1; i >= 0; i--, j++) {
                         cuerpoFormateado = cuerpo.charAt(i) + cuerpoFormateado;
@@ -135,8 +130,6 @@
                             cuerpoFormateado = "." + cuerpoFormateado;
                         }
                     }
-
-                    // Unir cuerpo y guión
                     e.target.value = `${cuerpoFormateado}-${dv}`;
                 });
             });
@@ -146,3 +139,5 @@
     {% block extra_js %}{% endblock %}
 </body>
 </html>
+
+    

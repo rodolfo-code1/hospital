@@ -21,7 +21,7 @@ class Parto(models.Model):
     fecha_hora_inicio = models.DateTimeField(verbose_name="Fecha/Hora Inicio")
     fecha_hora_termino = models.DateTimeField(verbose_name="Fecha/Hora Nacimiento", null=True, blank=True)
     
-    # Edad Gestacional (Columnas E y G del Excel)
+    # Edad Gestacional al momento del parto
     edad_gestacional_semanas = models.IntegerField(
         verbose_name="EG (Semanas)", 
         validators=[MinValueValidator(20), MaxValueValidator(45)],

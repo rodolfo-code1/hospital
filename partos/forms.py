@@ -1,11 +1,12 @@
 from django import forms
 from .models import Parto, Aborto
 from usuarios.models import Usuario
+from pacientes.models import Madre
 
 class PartoForm(forms.ModelForm):
     """
     Formulario para registrar parto.
-    Validación Cruzada: Impide registrar parto si ya existe Parto O Aborto en este ingreso.
+    Validación: Impide registrar parto si ya existe Parto O Aborto en este ingreso.
     """
     class Meta:
         model = Parto
@@ -36,7 +37,6 @@ class PartoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Carga Dinámica
         medicos = Usuario.objects.filter(rol__in=['medico', 'jefatura']).order_by('first_name')
         opciones_medicos = [('', 'Seleccione Médico...')] + [
             (u.get_full_name() if u.get_full_name().strip() else u.username, 
@@ -55,7 +55,6 @@ class PartoForm(forms.ModelForm):
         self.fields['matrona_responsable'].widget.choices = opciones_matronas
 
         # Solo madres hospitalizadas
-        from pacientes.models import Madre
         self.fields['madre'].queryset = Madre.objects.filter(estado_alta='hospitalizado')
 
     def clean_madre(self):
@@ -64,17 +63,13 @@ class PartoForm(forms.ModelForm):
         
         if not madre: return None
         
-        # Si es nuevo registro
         if not self.instance.pk:
-            # 1. Verificar estado
             if madre.estado_alta != 'hospitalizado':
                 raise forms.ValidationError(f"Paciente {madre.nombre} no está hospitalizada.")
 
-            # 2. Verificar si ya tiene PARTO
             if Parto.objects.filter(madre=madre, fecha_registro__gte=madre.fecha_ingreso).exists():
                 raise forms.ValidationError(f"La paciente ya tiene un PARTO registrado en este ingreso.")
 
-            # 3. Verificar si ya tiene ABORTO (Nuevo chequeo cruzado)
             if Aborto.objects.filter(madre=madre, fecha_derivacion__gte=madre.fecha_ingreso).exists():
                 raise forms.ValidationError(f"La paciente ya tiene un proceso de ABORTO/IVE en curso.")
         
@@ -82,10 +77,7 @@ class PartoForm(forms.ModelForm):
 
 
 class DerivacionAbortoForm(forms.ModelForm):
-    """
-    Formulario para derivar a médico (IVE/Aborto).
-    Validación Cruzada: Impide derivar si ya hay parto o aborto.
-    """
+    """Formulario para derivar a médico (IVE/Aborto)."""
     class Meta:
         model = Aborto
         fields = ['madre', 'observacion_matrona']
@@ -96,25 +88,17 @@ class DerivacionAbortoForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        from pacientes.models import Madre
         self.fields['madre'].queryset = Madre.objects.filter(estado_alta='hospitalizado')
 
     def clean_madre(self):
-        """VALIDACIÓN: Solo 1 evento (Parto o Aborto) por ingreso."""
         madre = self.cleaned_data.get('madre')
-        
         if not madre: return None
 
         if not self.instance.pk:
-            # 1. Verificar estado
             if madre.estado_alta != 'hospitalizado':
                 raise forms.ValidationError("Paciente no hospitalizada.")
-
-            # 2. Verificar si ya tiene PARTO (No puedes abortar si ya pariste en este ingreso)
             if Parto.objects.filter(madre=madre, fecha_registro__gte=madre.fecha_ingreso).exists():
                 raise forms.ValidationError("La paciente ya tiene un PARTO registrado. No corresponde derivación IVE.")
-
-            # 3. Verificar si ya tiene ABORTO
             if Aborto.objects.filter(madre=madre, fecha_derivacion__gte=madre.fecha_ingreso).exists():
                 raise forms.ValidationError("La paciente ya tiene una derivación de ABORTO/IVE registrada.")
         
@@ -131,3 +115,18 @@ class ResolverAbortoForm(forms.ModelForm):
             'causal': forms.Select(attrs={'class': 'form-select'}),
             'diagnostico_final': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
+
+
+class FiltroTurnoForm(forms.Form):
+    """Filtro para el panel de turnos de la matrona"""
+    fecha = forms.DateField(
+        required=False, 
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label="Seleccionar Fecha"
+    )
+    turno = forms.ChoiceField(
+        choices=[('dia', 'Día (08:00 - 20:00)'), ('noche', 'Noche (20:00 - 08:00)')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="Tipo de Turno"
+    )

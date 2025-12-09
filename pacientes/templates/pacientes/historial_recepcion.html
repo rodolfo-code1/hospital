@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de Ingresos - Recepción{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="text-primary mb-0"><i class="bi bi-clock-history"></i> Historial de Admisión</h2>
+        <p class="text-muted mb-0">Registro histórico de pacientes ingresados por recepción.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'app:home' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Panel
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4 border-0 shadow-sm bg-light">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-md-10">
+                <div class="input-group">
+                    <span class="input-group-text border-0 bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control border-0" placeholder="Buscar por RUT o Nombre..." value="{{ query|default:'' }}">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Buscar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow border-0">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Fecha Ingreso</th>
+                        <th>Paciente</th>
+                        <th>RUT</th>
+                        <th>Previsión</th>
+                        <th>Estado Actual</th>
+                        <th>Alerta Ingreso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for madre in madres %}
+                    <tr>
+                        <td>
+                            {{ madre.fecha_ingreso|date:"d/m/Y" }}
+                            <small class="d-block text-muted">{{ madre.fecha_ingreso|date:"H:i" }}</small>
+                        </td>
+                        <td class="fw-bold text-primary">{{ madre.nombre }}</td>
+                        <td>{{ madre.rut }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ madre.get_prevision_display }}</span></td>
+                        <td>
+                            {% if madre.estado_alta == 'hospitalizado' %}
+                                <span class="badge bg-success bg-opacity-75">En Sala (Hospitalizado)</span>
+                            {% elif madre.estado_alta == 'en_proceso' %}
+                                <span class="badge bg-warning text-dark">Alta en Proceso</span>
+                            {% elif madre.estado_alta == 'alta_administrativa' %}
+                                <span class="badge bg-secondary">Alta / Egresado</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark">{{ madre.estado_alta }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if madre.alerta_recepcion %}
+                                <span class="text-danger small fw-bold" title="{{ madre.alerta_recepcion }}">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> SÍ
+                                </span>
+                            {% else %}
+                                <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox display-4 d-block mb-3 opacity-25"></i>
+                            No se han registrado ingresos aún.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

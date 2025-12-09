@@ -31,3 +31,22 @@
         </div>
     </div>
 </div>
+
+<div class="col-md-6 col-lg-4">
+    <div class="card h-100 shadow-sm border-0 border-top border-dark border-4 hover-shadow">
+        <div class="card-body text-center">
+            <div class="display-4 text-dark mb-2"><i class="bi bi-qr-code-scan"></i></div>
+            <h6 class="card-title fw-bold">Identificación QR</h6>
+            <p class="card-text small text-muted">Generar brazaletes de seguridad.</p>
+            
+            <div class="d-grid gap-2">
+                <a href="{% url 'pacientes:admin_buscar_paciente' %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-person-standing-dress"></i> Madres
+                </a>
+                <a href="{% url 'recien_nacidos:admin_buscar_rn' %}" class="btn btn-outline-success btn-sm">
+                    <i class="bi bi-emoji-smile"></i> Recién Nacidos
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

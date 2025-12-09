@@ -1,49 +1,102 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{{ titulo }} - Gestión TI{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
+
+{% block title %}{{ titulo }} - Gestión de Usuarios{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-        <div class="card shadow">
-            <div class="card-header bg-dark text-white">
-                <h4 class="mb-0"><i class="bi bi-person-gear"></i> {{ titulo }}</h4>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    {% for field in form %}
-                    <div class="mb-3">
-                        {% if field.field.widget.input_type == 'checkbox' %}
-                            <div class="form-check form-switch">
-                                {{ field }}
-                                <label class="form-check-label fw-bold" for="{{ field.id_for_label }}">
-                                    {{ field.label }}
-                                </label>
-                            </div>
-                        {% else %}
-                            <label class="form-label fw-bold">{{ field.label }}</label>
-                            {{ field }}
-                        {% endif %}
-                        
-                        {% if field.errors %}
-                            <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
-                        {% endif %}
-                        {% if field.help_text %}
-                            <div class="form-text">{{ field.help_text }}</div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
+<div class="login-wrapper d-flex justify-content-center align-items-center">
+    <div class="login-card shadow">
 
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                        <a href="{% url 'usuarios:gestion_usuarios' %}" class="btn btn-secondary">Cancelar</a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save"></i> {{ btn_texto }}
-                        </button>
-                    </div>
-                </form>
+        <!-- 🎯 Panel izquierdo con info de roles -->
+        <div class="login-left text-white d-flex flex-column justify-content-center">
+            <h2 class="fw-bold">Gestión de Usuarios</h2>
+            <p class="mt-2">Creación de Cuenta Base</p>
+            <div class="mt-3">
+                <h6 class="fw-semibold text-white-50">Roles disponibles:</h6>
+                <ul class="login-roles mt-2">
+                    <li><strong>Recepcionista:</strong> Registro inicial de ingreso de madres</li>
+                    <li><strong>Médico:</strong> Confirma altas clínicas</li>
+                    <li><strong>Matrona:</strong> Registra procesos de parto</li>
+                    <li><strong>Administrativo:</strong> Confirma altas administrativas</li>
+                    <li><strong>Supervisor:</strong> Auditoría interna</li>
+                    <li><strong>Encargado TI:</strong> Gestión de usuarios y seguridad</li>
+                </ul>
             </div>
+        </div>
+
+        <!-- 🎯 Panel derecho con el formulario -->
+        <div class="login-right">
+            <h4 class="fw-bold mb-4 text-center">{{ titulo }}</h4>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.nombre.label }}</label>
+                    {{ form.nombre }}
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.rut.label }}</label>
+                        {{ form.rut }}
+                        <small class="text-muted small">Identificador único del sistema</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.rol.label }}</label>
+                        {{ form.rol }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.email.label }}</label>
+                    {{ form.email }}
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.telefono.label }}</label>
+                    {{ form.telefono }}
+                </div>
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger small">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+
+                {% if es_edicion %}
+                <div class="mb-3 mt-2">
+                    <label class="form-label fw-semibold">Estado de la Cuenta</label>
+
+                    <div class="form-check form-switch">
+                        {{ form.is_active }}
+                        <label class="form-check-label ms-2" for="id_is_active">
+                            {% if form.instance.is_active %}
+                                Activa
+                            {% else %}
+                                Inactiva
+                            {% endif %}
+                        </label>
+                    </div>
+
+                    <small class="text-muted">Si desactivas la cuenta, el usuario no podrá iniciar sesión.</small>
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-register w-100 fw-semibold mt-2">
+                    <i class="bi bi-check-circle"></i> {{ btn_texto }}
+                </button>
+            </form>
+
+            <p class="text-center small mt-4">
+                <a href="{% url 'usuarios:gestion_usuarios' %}" class="fw-semibold">
+                    <i class="bi bi-arrow-left"></i> Volver a la gestión
+                </a>
+            </p>
         </div>
     </div>
 </div>

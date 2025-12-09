@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Brazalete - {{ madre.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            
+            <h3 class="mb-4 text-secondary">Vista Previa de Brazalete</h3>
+            
+            <div class="card border-2 border-dark mx-auto shadow-sm" style="max-width: 600px; border-left: 10px solid #0d6efd;">
+                <div class="card-body d-flex align-items-center justify-content-between p-4">
+                    
+                    <div class="text-start">
+                        <h4 class="fw-bold mb-1">{{ madre.nombre }}</h4>
+                        <p class="mb-1 fs-5">RUT: <strong>{{ madre.rut }}</strong></p>
+                        <p class="mb-0 text-muted">Ficha: #{{ madre.id }} | {{ madre.fecha_ingreso|date:"d/m/Y" }}</p>
+                        <span class="badge bg-primary mt-2">HOSPITAL HERMINDA MARTÍN</span>
+                    </div>
+                    
+                    <div class="ms-3 border p-1 bg-white">
+                        <img src="{% url 'pacientes:generar_qr_imagen' madre.pk %}" alt="QR Paciente" style="width: 120px; height: 120px;">
+                    </div>
+                    
+                </div>
+            </div>
+
+            <div class="mt-5 d-print-none">
+                <button onclick="window.print()" class="btn btn-success btn-lg px-5 me-2">
+                    <i class="bi bi-printer"></i> Imprimir
+                </button>
+                <a href="{% url 'pacientes:admin_buscar_paciente' %}" class="btn btn-secondary btn-lg px-4">
+                    Volver
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style media="print">
+    nav, footer, .d-print-none { display: none !important; }
+    .card { border: 1px solid black !important; box-shadow: none !important; }
+    body { background-color: white; }
+</style>
+{% endblock %}

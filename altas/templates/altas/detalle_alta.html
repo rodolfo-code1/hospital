@@ -190,7 +190,7 @@
                     {% if alta.puede_confirmar_alta_clinica %}
                         <div class="border-bottom pb-3">
                             <h6 class="text-muted small fw-bold text-uppercase">Paso Actual: Médico</h6>
-                            {% if user.rol == 'medico' or user.rol == 'jefatura' %}
+                            {% if user.rol == 'medico'  %}
                                 <a href="{% url 'altas:confirmar_alta_clinica' alta.pk %}" class="btn btn-success w-100 btn-lg shadow-sm">
                                     <i class="bi bi-pen-fill"></i> Firmar Alta Clínica
                                 </a>
@@ -205,7 +205,7 @@
                     {% if alta.puede_confirmar_alta_administrativa %}
                         <div class="border-bottom pb-3">
                             <h6 class="text-muted small fw-bold text-uppercase">Paso Actual: Administrativo</h6>
-                            {% if user.rol == 'administrativo' or user.rol == 'jefatura' %}
+                            {% if user.rol == 'administrativo' %}
                                 <a href="{% url 'altas:confirmar_alta_administrativa' alta.pk %}" class="btn btn-primary w-100 btn-lg shadow-sm">
                                     <i class="bi bi-building-check"></i> Cerrar Alta Administrativa
                                 </a>
@@ -220,9 +220,16 @@
                     {% if alta.esta_completada %}
                         <div class="bg-success bg-opacity-10 p-3 rounded text-center">
                             <div class="text-success fw-bold mb-2"><i class="bi bi-check-circle-fill"></i> Proceso Finalizado</div>
-                            <a href="{% url 'altas:descargar_certificado' alta.pk %}" class="btn btn-danger w-100 shadow-sm" target="_blank">
-                                <i class="bi bi-file-pdf-fill"></i> Descargar Certificado
-                            </a>
+                            
+                            {% if user.rol != 'medico' %}
+                                <a href="{% url 'altas:descargar_certificado' alta.pk %}" class="btn btn-danger w-100 shadow-sm" target="_blank">
+                                    <i class="bi bi-file-pdf-fill"></i> Descargar Certificado
+                                </a>
+                            {% else %}
+                                <div class="text-muted small">
+                                    <i class="bi bi-lock-fill"></i> La descarga del certificado es exclusiva del área administrativa.
+                                </div>
+                            {% endif %}
                         </div>
                     {% endif %}
 

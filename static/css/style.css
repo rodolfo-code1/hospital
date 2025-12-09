@@ -1,0 +1,87 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f7f9;
+}
+
+main {
+  flex: 1;
+}
+
+/* Navbar */
+.custom-navbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.navbar-brand {
+  color: #01224f !important;
+}
+
+.navbar-brand:hover {
+  color: #148795 !important;
+}
+
+.custon-admin {
+  color: #148795 !important;
+  font-weight: 600;
+  transition: all .2s ease;
+}
+
+.custon-admin:hover {
+  color: #fdb216 !important;
+  background: rgba(20,135,149,0.08);
+  border-radius: 6px;
+  padding-inline: 4px;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 576px) {
+  .nav-responsive {
+    padding-inline: 8px !important;
+  }
+}
+
+/* Colores roles */
+.badge-matrona {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.badge-medico {
+  background-color: #0cb3b7;
+  color: #fff;
+}
+
+.badge-ti {
+  background-color: #fdb216;
+  color: #212529;
+}
+
+.badge-supervisor {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.badge-recepcionista {
+  background-color: #3b82f6 !important;
+  color: #fff !important;
+}
+
+.badge-administrador {
+  background-color: #6f42c1;
+  color: #fff;
+}
+
+
+/* Footer */
+footer {
+  background-color: #17205d;
+  color: #fff;
+}
+
+.text-seguridad-footer {
+  color: #b0b0b0;
+}
