@@ -32,6 +32,15 @@ SECRET_KEY = 'django-insecure-h7x5$y745ymnvb2gjo)6v28lhli13px*#7qtb$!men@b(y)mr2
 # SECURITY WARNING: don't run with debug turned on in production!
 # settings.py
 
+# 1. Seguridad HTTPS en Azure (¡Agrégalo si no lo tienes!)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# 2. Tu dominio en la lista de confianza (con https://)
+CSRF_TRUSTED_ORIGINS = [
+    'https://hospital-a0b7f8g8f5hreyan.canadacentral-01.azurewebsites.net',
+]
+
+# 3. Orígenes permitidos (sin https://)
 ALLOWED_HOSTS = [
     'hospital-a0b7f8g8f5hreyan.canadacentral-01.azurewebsites.net',
     'localhost',
