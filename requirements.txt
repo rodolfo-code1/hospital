@@ -30,3 +30,5 @@ pytest==7.1.2
 pytest-django==4.5.2
 
 qrcode==7.4.2
+
+whitenoise==6.6.0
