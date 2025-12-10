@@ -96,7 +96,7 @@ def mis_registros_clinicos(request):
     # Consultas filtradas
     # A. FICHAS COMPLETADAS (Cambio de Lógica: Responsable Clínico)
     madres = Madre.objects.filter(
-        responsable_clinico=request.user,
+        creado_por=request.user,
         fecha_actualizacion__range=(inicio_turno, fin_turno)
     ).order_by('-fecha_actualizacion')
 
