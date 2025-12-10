@@ -30,8 +30,16 @@ except Exception:
 SECRET_KEY = 'django-insecure-h7x5$y745ymnvb2gjo)6v28lhli13px*#7qtb$!men@b(y)mr2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True") == "True"
-ALLOWED_HOSTS = []
+# settings.py
+
+ALLOWED_HOSTS = [
+    'hospital-a0b7f8g8f5hreyan.canadacentral-01.azurewebsites.net',
+    'localhost',
+    '127.0.0.1'
+]
+
+
+DEBUG = False
 
 
 # Application definition
@@ -58,11 +66,12 @@ SITE_ID = 1
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # para diseño
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'usuarios.middleware.CurrentUserMiddleware',  # Capturar usuario actual para auditoría
+    'usuarios.middleware.CurrentUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
@@ -143,8 +152,16 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] 
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/5.2/howto/static-files/
+
+STATIC_URL = '/static/'  # Agregué la barra al inicio para evitar errores
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+
+# --- CONFIGURACIÓN FALTANTE PARA AZURE ---
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
