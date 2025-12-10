@@ -30,9 +30,17 @@ except Exception:
 SECRET_KEY = 'django-insecure-h7x5$y745ymnvb2gjo)6v28lhli13px*#7qtb$!men@b(y)mr2'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DEBUG", "True") == "True"
-ALLOWED_HOSTS = ['*']
+DEBUG = False # Importante cambiar a False en producción
 
+ALLOWED_HOSTS = [
+    'hospital-a0b7f8g8f5hreyan.canadacentral-01.azurewebsites.net',
+    'localhost',
+    '127.0.0.1'
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://hospital-a0b7f8g8f5hreyan.canadacentral-01.azurewebsites.net',
+]
 
 # Application definition
 
@@ -54,6 +62,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -137,8 +146,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] if os.path.exists(os.path.join(BASE_DIR, 'static')) else []
+import os
+
+STATIC_URL = '/static/'
+
+# Esta es la carpeta donde Azure buscará los archivos
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Configuración de WhiteNoise para comprimir y cachear archivos
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # Default primary key field type
