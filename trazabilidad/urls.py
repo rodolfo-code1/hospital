@@ -29,6 +29,7 @@ urlpatterns = [
     path('recien-nacidos/', include('recien_nacidos.urls')),
     path('reportes/', include('reportes.urls')),
     path('altas/', include('altas.urls')),
+    path('respaldos/', include('respaldos.urls')),
 
  # LA RAÍZ AHORA APUNTA A 'app'
     path('', include('app.urls')), 
