@@ -9,7 +9,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
-from datetime import datetime
+from django.utils import timezone
 
 def generar_certificado_pdf(alta):
     """
@@ -29,7 +29,8 @@ def generar_certificado_pdf(alta):
     else:
         sufijo = f"Alta_{alta.id}"
         
-    filename = f'certificado_alta_{sufijo}_{datetime.now().strftime("%Y%m%d")}.pdf'
+    fecha_hoy = timezone.localtime(timezone.now())
+    filename = f'certificado_alta_{sufijo}_{fecha_hoy.strftime("%Y%m%d")}.pdf'
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     # Crear documento PDF
@@ -193,7 +194,7 @@ def generar_certificado_pdf(alta):
     )
     
     fecha_emision = Paragraph(
-        f"Documento generado el {datetime.now().strftime('%d/%m/%Y a las %H:%M')}",
+        f"Documento generado el {fecha_hoy.strftime('%d/%m/%Y a las %H:%M')}",
         pie_style
     )
     story.append(Spacer(1, 0.5 * inch))
