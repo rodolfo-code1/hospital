@@ -16,24 +16,15 @@
               <div class="card border-0 shadow-sm bg-light mb-4 card-bienvenida">
                   <div class="card-body d-flex align-items-center justify-content-between">
                       <div>
-                          <h2 class="fw-bold text-dark mb-2">
-                              Hola, {{ user.first_name }}
-                          </h2>
+                          <h2 class="fw-bold text-dark mb-2">Hola, {{ user.first_name }}</h2>
                           <p class="text-muted mb-0">
                               Rol: 
-                              {% if user.rol == 'matrona' %}
-                                  <span class="badge badge-matrona">{{ user.get_rol_display }}</span>
-                              {% elif user.rol == 'medico' %}
-                                  <span class="badge badge-medico">{{ user.get_rol_display }}</span>
-                              {% elif user.rol == 'encargado_ti' %}
-                                  <span class="badge badge-ti">{{ user.get_rol_display }}</span>
-                              {% elif user.rol == 'supervisor' %}
-                                  <span class="badge badge-supervisor">{{ user.get_rol_display }}</span>
-                              {% elif user.rol == 'administrativo' %}
-                                  <span class="badge badge-administrador">{{ user.get_rol_display }}</span>
-                              {% else %}
-                                  <span class="badge bg-light text-dark">{{ user.get_rol_display }}</span>
-                              {% endif %}
+                              {% if user.rol == 'matrona' %}<span class="badge badge-matrona">{{ user.get_rol_display }}</span>
+                              {% elif user.rol == 'medico' %}<span class="badge badge-medico">{{ user.get_rol_display }}</span>
+                              {% elif user.rol == 'encargado_ti' %}<span class="badge badge-ti">{{ user.get_rol_display }}</span>
+                              {% elif user.rol == 'supervisor' %}<span class="badge badge-supervisor">{{ user.get_rol_display }}</span>
+                              {% elif user.rol == 'administrativo' %}<span class="badge badge-administrador">{{ user.get_rol_display }}</span>
+                              {% else %}<span class="badge bg-light text-dark">{{ user.get_rol_display }}</span>{% endif %}
                               &nbsp;|&nbsp; <i class="bi bi-calendar-event"></i> {% now "d/m/Y" %}
                           </p>
                       </div>
@@ -69,11 +60,12 @@
                         
                         <div class="btn-group shadow-sm ms-3">
                             {% if noti.link %}
-                                <a href="{{ noti.link }}" class="btn btn-sm btn-primary">
+                                <a href="{% url 'app:marcar_leida' noti.pk %}" class="btn btn-sm btn-primary">
                                     <i class="bi bi-eye-fill"></i> Revisar
                                 </a>
                             {% endif %}
-                            <a href="{% url 'app:marcar_leida' noti.pk %}" class="btn btn-sm btn-outline-secondary bg-white text-muted" title="Cerrar / Descartar">
+                            
+                            <a href="{% url 'app:ocultar_notificacion' noti.pk %}" class="btn btn-sm btn-outline-secondary bg-white text-muted" title="Descartar">
                                 <i class="bi bi-x-lg"></i>
                             </a>
                         </div>
@@ -101,19 +93,15 @@
             .then(data => {
                 const contenedorExistente = document.getElementById('contenedor-alertas');
                 
-                // Si no hay notificaciones, limpiamos
                 if (data.cantidad === 0) {
                     if (contenedorExistente) contenedorExistente.innerHTML = '';
                     return;
                 }
 
-                // Construimos el HTML nuevo
                 let htmlContent = `
                 <div class="card border-warning mb-3 shadow" id="panel-notificaciones">
                     <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-bell-fill"></i> Tienes ${data.cantidad} notificaciones nuevas
-                        </h5>
+                        <h5 class="mb-0"><i class="bi bi-bell-fill"></i> Tienes ${data.cantidad} notificaciones nuevas</h5>
                     </div>
                     <div class="list-group list-group-flush">
                 `;
@@ -122,33 +110,28 @@
                     let claseColor = noti.tipo === 'urgente' ? 'bg-danger-subtle' : '';
                     let icono = noti.tipo === 'urgente' ? '<i class="bi bi-exclamation-octagon-fill text-danger"></i>' : '';
                     
-                    // Generar URL para borrar (X)
-                    let urlLeida = "{% url 'app:marcar_leida' 999999 %}".replace('999999', noti.id);
+                    // URL para Revisar (Ir al link)
+                    let urlRevisar = "{% url 'app:marcar_leida' 999999 %}".replace('999999', noti.id);
                     
-                    // Generar botón Revisar (solo si tiene link)
+                    // URL para Cerrar (Solo borrar)
+                    let urlOcultar = "{% url 'app:ocultar_notificacion' 999999 %}".replace('999999', noti.id);
+                    
                     let btnRevisar = '';
                     if (noti.link) {
-                        btnRevisar = `
-                            <a href="${noti.link}" class="btn btn-sm btn-primary">
-                                <i class="bi bi-eye-fill"></i> Revisar
-                            </a>
-                        `;
+                        btnRevisar = `<a href="${urlRevisar}" class="btn btn-sm btn-primary"><i class="bi bi-eye-fill"></i> Revisar</a>`;
                     }
 
-                    // HTML de cada fila (Diseño Unificado)
                     htmlContent += `
                         <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center ${claseColor}">
                             <div class="ms-2 me-auto">
-                                <div class="fw-bold">
-                                    ${icono} ${noti.titulo}
-                                </div>
+                                <div class="fw-bold">${icono} ${noti.titulo}</div>
                                 <span style="white-space: pre-line;">${noti.mensaje}</span>
                                 <div class="small text-muted mt-1">${noti.fecha}</div>
                             </div>
                             
                             <div class="btn-group shadow-sm ms-3">
                                 ${btnRevisar}
-                                <a href="${urlLeida}" class="btn btn-sm btn-outline-secondary bg-white text-muted" title="Cerrar / Descartar">
+                                <a href="${urlOcultar}" class="btn btn-sm btn-outline-secondary bg-white text-muted" title="Descartar">
                                     <i class="bi bi-x-lg"></i>
                                 </a>
                             </div>
@@ -156,10 +139,7 @@
                     `;
                 });
 
-                htmlContent += `
-                    </div>
-                </div>
-                `;
+                htmlContent += `</div></div>`;
 
                 if (contenedorExistente) {
                     contenedorExistente.innerHTML = htmlContent;
@@ -168,7 +148,6 @@
             .catch(error => console.error('Error silencioso cargando notificaciones:', error));
     }
 
-    // Ejecutar cada 5 segundos
     setInterval(actualizarNotificaciones, 5000);
 </script>
 {% endblock %}
