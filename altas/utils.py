@@ -9,17 +9,15 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.enums import TA_CENTER, TA_LEFT
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
-from django.utils import timezone
+from django.utils import timezone # Importante para la hora
 
 def generar_certificado_pdf(alta):
     """
-    Genera un certificado de alta en formato PDF.
-    Incluye datos de pacientes, parto y planificación familiar.
+    Genera un certificado de alta en formato PDF con horas corregidas (Zona Horaria Local).
     """
-    # Configuración de la respuesta HTTP
     response = HttpResponse(content_type='application/pdf')
     
-    # Nombre dinámico del archivo
+    # Nombre dinámico
     if alta.madre and alta.recien_nacido:
         sufijo = f"{alta.madre.rut}_RN"
     elif alta.madre:
@@ -29,16 +27,16 @@ def generar_certificado_pdf(alta):
     else:
         sufijo = f"Alta_{alta.id}"
         
+    # Usamos localtime para el nombre del archivo
     fecha_hoy = timezone.localtime(timezone.now())
     filename = f'certificado_alta_{sufijo}_{fecha_hoy.strftime("%Y%m%d")}.pdf'
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
-    # Crear documento PDF
     doc = SimpleDocTemplate(response, pagesize=letter)
     story = []
     styles = getSampleStyleSheet()
     
-    # --- ESTILOS PERSONALIZADOS ---
+    # --- ESTILOS ---
     titulo_style = ParagraphStyle(
         'CustomTitle',
         parent=styles['Heading1'],
@@ -63,7 +61,14 @@ def generar_certificado_pdf(alta):
     story.append(Paragraph("CERTIFICADO DE ALTA HOSPITALARIA", titulo_style))
     story.append(Spacer(1, 0.2 * inch))
     
-    intro = f"El Hospital Clínico Herminda Martín certifica que el proceso de alta médica y administrativa ha concluido exitosamente con fecha {alta.fecha_alta.strftime('%d/%m/%Y a las %H:%M')}."
+    # CORRECCIÓN 1: Convertir fecha de alta a hora local antes de mostrar
+    if alta.fecha_alta:
+        fecha_alta_local = timezone.localtime(alta.fecha_alta)
+        fecha_texto = fecha_alta_local.strftime('%d/%m/%Y a las %H:%M')
+    else:
+        fecha_texto = "Fecha pendiente"
+
+    intro = f"El Hospital Clínico Herminda Martín certifica que el proceso de alta médica y administrativa ha concluido exitosamente con fecha {fecha_texto}."
     story.append(Paragraph(intro, texto_normal))
     story.append(Spacer(1, 0.3 * inch))
     
@@ -121,9 +126,12 @@ def generar_certificado_pdf(alta):
     if alta.parto:
         story.append(Paragraph("ANTECEDENTES DEL PARTO", subtitulo_style))
         
+        # Corrección fecha parto (opcional, pero recomendada)
+        fecha_parto = timezone.localtime(alta.parto.fecha_hora_inicio).strftime('%d/%m/%Y')
+
         datos_parto = [
             ['Tipo:', alta.parto.get_tipo_display()],
-            ['Fecha:', alta.parto.fecha_hora_inicio.strftime('%d/%m/%Y')],
+            ['Fecha:', fecha_parto],
             ['Médico:', alta.parto.medico_responsable],
             ['Matrona:', alta.parto.matrona_responsable],
         ]
@@ -137,19 +145,16 @@ def generar_certificado_pdf(alta):
         story.append(tabla_parto)
         story.append(Spacer(1, 0.2 * inch))
 
-    # --- SECCIÓN 4: PLANIFICACIÓN FAMILIAR (NUEVO) ---
-    # Solo mostramos esta sección si se marcó que se entregó un método
+    # --- SECCIÓN 4: MAC ---
     if alta.se_entrego_anticonceptivo:
         story.append(Paragraph("PLANIFICACIÓN FAMILIAR / MAC", subtitulo_style))
-        
         datos_mac = [
             ['Método Entregado:', alta.get_metodo_anticonceptivo_display()],
             ['Estado:', 'Suministrado al alta'],
         ]
-        
         tabla_mac = Table(datos_mac, colWidths=[2*inch, 4*inch])
         tabla_mac.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e6fffa')), # Color suave distintivo
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e6fffa')),
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
             ('ALIGN', (0, 0), (0, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
@@ -163,11 +168,20 @@ def generar_certificado_pdf(alta):
     # --- SECCIÓN 5: RESPONSABLES ---
     story.append(Paragraph("RESPONSABLES DEL ALTA", subtitulo_style))
     
+    # CORRECCIÓN 2: Fechas de confirmación
+    fecha_clinica_str = '-'
+    if alta.fecha_confirmacion_clinica:
+        fecha_clinica_str = timezone.localtime(alta.fecha_confirmacion_clinica).strftime('%d/%m/%Y %H:%M')
+
+    fecha_admin_str = '-'
+    if alta.fecha_confirmacion_administrativa:
+        fecha_admin_str = timezone.localtime(alta.fecha_confirmacion_administrativa).strftime('%d/%m/%Y %H:%M')
+
     datos_alta = [
         ['Alta Médica:', alta.medico_confirma or '-'],
-        ['Fecha Clínica:', alta.fecha_confirmacion_clinica.strftime('%d/%m/%Y %H:%M') if alta.fecha_confirmacion_clinica else '-'],
+        ['Fecha Clínica:', fecha_clinica_str],
         ['Cierre Administrativo:', alta.administrativo_confirma or '-'],
-        ['Fecha Admin:', alta.fecha_confirmacion_administrativa.strftime('%d/%m/%Y %H:%M') if alta.fecha_confirmacion_administrativa else '-'],
+        ['Fecha Admin:', fecha_admin_str],
     ]
     
     tabla_alta = Table(datos_alta, colWidths=[2*inch, 4*inch])
@@ -178,13 +192,13 @@ def generar_certificado_pdf(alta):
     story.append(tabla_alta)
     story.append(Spacer(1, 0.5 * inch))
     
-    # Observaciones Finales
+    # Observaciones
     if alta.observaciones:
         story.append(Paragraph("OBSERVACIONES / INDICACIONES", subtitulo_style))
         obs_text = Paragraph(alta.observaciones.replace('\n', '<br/>'), texto_normal)
         story.append(obs_text)
     
-    # Pie de página
+    # Pie
     pie_style = ParagraphStyle(
         'Footer',
         parent=styles['Normal'],
@@ -200,22 +214,18 @@ def generar_certificado_pdf(alta):
     story.append(Spacer(1, 0.5 * inch))
     story.append(fecha_emision)
     
-    # Construir PDF
     doc.build(story)
-    
     return response
 
 
 def exportar_altas_excel(altas):
     """
-    Exporta lista de altas a Excel.
-    Incluye columnas de Planificación Familiar.
+    Exporta lista de altas a Excel (con corrección de hora para nombre de archivo).
     """
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Registro de Altas"
     
-    # Estilos
     header_fill = PatternFill(start_color="1a365d", end_color="1a365d", fill_type="solid")
     header_font = Font(color="FFFFFF", bold=True, size=11)
     header_alignment = Alignment(horizontal="center", vertical="center")
@@ -223,11 +233,10 @@ def exportar_altas_excel(altas):
     headers = [
         'Folio', 'Tipo Alta', 'RUT Madre', 'Nombre Madre', 
         'Código RN', 'Sexo RN', 
-        'Entrega MAC', 'Método MAC', # <--- NUEVAS COLUMNAS
+        'Entrega MAC', 'Método MAC',
         'Médico Resp.', 'Admin Resp.', 'Fecha Alta', 'Estado'
     ]
     
-    # Escribir encabezados
     for col_num, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col_num)
         cell.value = header
@@ -235,23 +244,25 @@ def exportar_altas_excel(altas):
         cell.font = header_font
         cell.alignment = header_alignment
     
-    # Escribir datos
     for row_num, alta in enumerate(altas, 2):
-        # Determinar tipo
         tipo = "Conjunta"
         if not alta.madre: tipo = "Solo RN"
         if not alta.recien_nacido: tipo = "Solo Madre"
         
-        # Datos seguros
         rut_madre = alta.madre.rut if alta.madre else "-"
         nom_madre = alta.madre.nombre if alta.madre else "-"
-        
         cod_rn = alta.recien_nacido.codigo_unico if alta.recien_nacido else "-"
         sexo_rn = alta.recien_nacido.get_sexo_display() if alta.recien_nacido else "-"
         
-        # Datos de MAC
         mac_entregado = "SÍ" if alta.se_entrego_anticonceptivo else "NO"
         mac_metodo = alta.get_metodo_anticonceptivo_display() if alta.se_entrego_anticonceptivo else "-"
+
+        # Corrección de hora para celda Excel
+        fecha_alta_str = '-'
+        if alta.fecha_alta:
+            # openpyxl no maneja bien timezones, convertimos a local y quitamos info de zona
+            fecha_local = timezone.localtime(alta.fecha_alta)
+            fecha_alta_str = fecha_local.strftime('%d/%m/%Y %H:%M')
 
         ws.cell(row=row_num, column=1, value=alta.id)
         ws.cell(row=row_num, column=2, value=tipo)
@@ -263,10 +274,9 @@ def exportar_altas_excel(altas):
         ws.cell(row=row_num, column=8, value=mac_metodo)
         ws.cell(row=row_num, column=9, value=alta.medico_confirma or '-')
         ws.cell(row=row_num, column=10, value=alta.administrativo_confirma or '-')
-        ws.cell(row=row_num, column=11, value=alta.fecha_alta.strftime('%d/%m/%Y %H:%M') if alta.fecha_alta else '-')
+        ws.cell(row=row_num, column=11, value=fecha_alta_str)
         ws.cell(row=row_num, column=12, value=alta.get_estado_display())
     
-    # Ajustar ancho columnas
     for col in ws.columns:
         max_length = 0
         column = col[0].column_letter
@@ -278,8 +288,13 @@ def exportar_altas_excel(altas):
         ws.column_dimensions[column].width = max_length + 2
     
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    filename = f'reporte_altas_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx'
+    
+    # CORRECCIÓN NOMBRE ARCHIVO (Usando timezone)
+    fecha_nombre = timezone.localtime(timezone.now())
+    filename = f'reporte_altas_{fecha_nombre.strftime("%Y%m%d_%H%M")}.xlsx'
+    
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     
     wb.save(response)
     return response
+    
