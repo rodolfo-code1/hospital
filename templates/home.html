@@ -45,41 +45,42 @@
             </div>
         </div>
 
-        {% if cant_notificaciones > 0 %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card border-warning shadow">
-                    <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-bell-fill"></i> Tienes {{ cant_notificaciones }} notificaciones nuevas
-                        </h5>
-                    </div>
-                    <div class="list-group list-group-flush">
-                        {% for noti in notificaciones %}
-                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start {% if noti.tipo == 'urgente' %}bg-danger-subtle{% endif %}">
-                            <div class="ms-2 me-auto">
-                                <div class="fw-bold">
-                                    {% if noti.tipo == 'urgente' %}
-                                        <i class="bi bi-exclamation-octagon-fill text-danger"></i>
-                                    {% endif %}
-                                    {{ noti.titulo }}
-                                </div>
-                                {{ noti.mensaje|linebreaksbr }}
-                                <div class="small text-muted mt-1">
-                                    {{ noti.fecha_creacion|timesince }} atrás
-                                </div>
-                            </div>
-                            <a href="{% url 'app:marcar_leida' noti.pk %}" class="btn btn-sm btn-outline-dark">
-                                {% if noti.link %}Revisar{% else %}Ocultar{% endif %}
-                            </a>
+        <div id="contenedor-alertas">
+            {% if cant_notificaciones > 0 %}
+            <div class="row mb-4" id="panel-notificaciones">
+                <div class="col-12">
+                    <div class="card border-warning shadow">
+                        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-bell-fill"></i> Tienes {{ cant_notificaciones }} notificaciones nuevas
+                            </h5>
                         </div>
-                        {% endfor %}
+                        <div class="list-group list-group-flush">
+                            {% for noti in notificaciones %}
+                            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start {% if noti.tipo == 'urgente' %}bg-danger-subtle{% endif %}">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">
+                                        {% if noti.tipo == 'urgente' %}
+                                            <i class="bi bi-exclamation-octagon-fill text-danger"></i>
+                                        {% endif %}
+                                        {{ noti.titulo }}
+                                    </div>
+                                    {{ noti.mensaje|linebreaksbr }}
+                                    <div class="small text-muted mt-1">
+                                        {{ noti.fecha_creacion|timesince }} atrás
+                                    </div>
+                                </div>
+                                <a href="{% url 'app:marcar_leida' noti.pk %}" class="btn btn-sm btn-outline-dark">
+                                    {% if noti.link %}Revisar{% else %}Ocultar{% endif %}
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>
+            {% endif %}
         </div>
-        {% endif %}
-
         <div class="row g-4">
             {% if user.rol == 'matrona' %}
                 {% include 'componentes/panel/matrona.html' %}
@@ -108,19 +109,22 @@
 
     </div>
 </div>
+
 <script>
     function actualizarNotificaciones() {
+        // Consultamos a la API
         fetch("{% url 'app:api_notificaciones' %}")
             .then(response => response.json())
             .then(data => {
-                // 1. Si NO hay notificaciones, ocultar el panel
+                const contenedorExistente = document.getElementById('contenedor-alertas');
+                
+                // 1. Si NO hay notificaciones, limpiamos el contenedor
                 if (data.cantidad === 0) {
-                    const panel = document.getElementById('panel-notificaciones');
-                    if (panel) panel.style.display = 'none';
+                    if (contenedorExistente) contenedorExistente.innerHTML = '';
                     return;
                 }
 
-                // 2. Si hay notificaciones, construir el HTML nuevo
+                // 2. Si hay notificaciones, construimos el HTML
                 let htmlContent = `
                 <div class="row mb-4" id="panel-notificaciones">
                     <div class="col-12">
@@ -134,12 +138,11 @@
                 `;
 
                 data.notificaciones.forEach(noti => {
-                    // Definir color si es urgente
                     let claseColor = noti.tipo === 'urgente' ? 'bg-danger-subtle' : '';
                     let icono = noti.tipo === 'urgente' ? '<i class="bi bi-exclamation-octagon-fill text-danger"></i>' : '';
                     let textoBoton = noti.link ? 'Revisar' : 'Ocultar';
                     
-                    // Crear URL para marcar leída (Truco para insertar el ID dinámico)
+                    // Truco para generar la URL dinámica en JS
                     let urlLeida = "{% url 'app:marcar_leida' 999999 %}".replace('999999', noti.id);
 
                     htmlContent += `
@@ -165,17 +168,16 @@
                 </div>
                 `;
 
-                // 3. Reemplazar o insertar el HTML en la página
-                const contenedorExistente = document.getElementById('contenedor-alertas');
+                // 3. Insertamos el HTML nuevo en el contenedor
                 if (contenedorExistente) {
                     contenedorExistente.innerHTML = htmlContent;
                 }
             })
-            .catch(error => console.error('Error cargando notificaciones:', error));
+            .catch(error => console.error('Error silencioso cargando notificaciones:', error));
     }
 
-    // Ejecutar la función cada 5 segundos (5000 milisegundos)
+    // Ejecutar cada 5 segundos
     setInterval(actualizarNotificaciones, 5000);
 </script>
 {% endblock %}
-{% endblock %}
+
