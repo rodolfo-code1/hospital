@@ -26,4 +26,6 @@ urlpatterns = [
     
     # --- FICHA DIGITAL (QR) ---
     path('ficha-digital/<int:pk>/', views.ficha_qr_madre, name='ficha_qr_madre'),
+    path('mi-historial/', views.historial_trabajo_matrona, name='mi_historial'),
+]
 ]
