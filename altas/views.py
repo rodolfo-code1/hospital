@@ -4,7 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Prefetch
 from .models import Alta
 from pacientes.models import Madre
-from partos.models import Parto
+# IMPORTANTE: Agregamos 'Aborto' aquí para poder filtrar
+from partos.models import Parto, Aborto 
 from recien_nacidos.models import RecienNacido
 from .forms import (
     CrearAltaForm, ConfirmarAltaClinicaForm, ConfirmarAltaAdministrativaForm, BuscarAltaForm
@@ -20,7 +21,11 @@ import json
 def panel_medico(request):
     """
     Dashboard Clínico para Médicos.
-    Muestra estadísticas de flujo y pacientes en sala.
+    
+    FILTRO MEJORADO:
+    Muestra SOLO pacientes que cumplen una de estas dos condiciones:
+    1. Tienen Parto Y Recién Nacido (Derivación completa de Matronería).
+    2. Tienen un Aborto/IVE en estado 'confirmado' (Ya pasó por el panel de abortos).
     """
     # 1. ESTADÍSTICAS
     en_proceso = Alta.objects.filter(alta_clinica_confirmada=False).count()
@@ -35,11 +40,17 @@ def panel_medico(request):
         'completadas': completadas
     }
 
-    # 2. PACIENTES EN SALA
+    # 2. PACIENTES EN SALA (Lógica de Filtro Nueva)
     pacientes = Madre.objects.exclude(
-        estado_alta='alta_administrativa'
-    ).prefetch_related(
-        'partos__recien_nacidos'
+        estado_alta='alta_administrativa' # Excluir las que ya se fueron
+    ).filter(
+        # CONDICIÓN A: Tiene Parto Y tiene hijos asociados (isnull=False)
+        Q(partos__recien_nacidos__isnull=False) | 
+        # CONDICIÓN B: Tiene Aborto confirmado (Ya resuelto)
+        Q(abortos__estado='confirmado')
+    ).distinct().prefetch_related(
+        'partos__recien_nacidos',
+        'abortos'
     ).order_by('fecha_ingreso')
 
     context = {
@@ -145,7 +156,8 @@ def crear_alta(request):
                 alta.recien_nacido.estado_alta = 'alta_medica'
                 alta.recien_nacido.save()
             
-   
+            # El alta queda creada pero NO firmada.
+            # El médico debe ir a "Por Firmar" para completarla.
             messages.success(request, 'Alta generada correctamente. Proceda a revisarla y firmarla en la lista de pendientes.')
             
             # Redirigir al Panel Médico para seguir gestionando pacientes
@@ -165,7 +177,8 @@ def crear_alta(request):
     
     # Intenta filtrar partos hospitalizados si el campo existe, si no, trae todos
     try:
-        partos = Parto.objects.filter(estado_alta='hospitalizado')
+        # Usa el filtro correcto a través de la madre
+        partos = Parto.objects.filter(madre__estado_alta='hospitalizado')
     except:
         partos = Parto.objects.all()
 
