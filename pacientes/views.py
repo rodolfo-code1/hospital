@@ -161,25 +161,26 @@ def ver_ficha_clinica(request, pk):
     for field in form.fields.values(): field.widget.attrs['disabled'] = True
     return render(request, 'pacientes/ver_ficha.html', {'form': form, 'madre': madre, 'titulo': 'Ficha Clínica'})
 
+# hospital/pacientes/views.py
+
 @login_required
 def editar_ficha_clinica(request, pk):
     madre = get_object_or_404(Madre, pk=pk)
     
     if request.method == 'POST':
-        # CORRECCIÓN: Usar MadreRecepcionForm para que aparezca el semáforo y se guarde
+        # USAMOS MadreRecepcionForm AQUÍ PARA QUE APAREZCA EL SEMÁFORO
         form = MadreRecepcionForm(request.POST, instance=madre)
-        
         if form.is_valid():
             form.save()
-            messages.success(request, 'Ficha actualizada.')
+            messages.success(request, 'Ficha actualizada correctamente.')
             return redirect('pacientes:ver_ficha', pk=madre.pk)
     else:
-        # CORRECCIÓN AQUÍ TAMBIÉN
+        # AQUÍ TAMBIÉN CAMBIAMOS EL FORMULARIO
         form = MadreRecepcionForm(instance=madre)
     
     return render(request, 'pacientes/registrar_madre.html', {
-        'form': form,
-        'titulo': 'Editar Ficha',
+        'form': form, 
+        'titulo': 'Editar Ficha', 
         'subtitulo': f'{madre.nombre}'
     })
 # Compatibilidad
