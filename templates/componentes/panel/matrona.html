@@ -44,14 +44,19 @@
     </div>
 </div>
 
-<div class="col-12">
-    <div class="alert alert-success d-flex justify-content-between align-items-center mb-0 shadow-sm">
-        <div>
-            <i class="bi bi-clock-history"></i> <strong>Resumen de Turno:</strong>
-            <span class="ms-2">Tienes <strong>{{ registros_hoy|default:"0" }}</strong> partos registrados hoy.</span>
+<div class="col-md-4">
+    <div class="card text-center h-100 shadow-sm border-info">
+        <div class="card-body">
+            <div class="mb-3 text-info">
+                <i class="bi bi-journal-medical fs-1"></i>
+            </div>
+            <h5 class="card-title text-dark">Mis Atenciones</h5>
+            <p class="card-text small text-muted">
+                Revisa las fichas clínicas en las que has intervenido o modificado datos.
+            </p>
+            <a href="{% url 'pacientes:mi_historial' %}" class="btn btn-outline-info w-100">
+                Ver Mi Historial
+            </a>
         </div>
-        <a href="{% url 'partos:mis_registros' %}" class="btn btn-sm btn-light text-success fw-bold border">
-            Ver Mi Gestión Completa
-        </a>
     </div>
 </div>
