@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.db.models import Q
+from django.http import JsonResponse
 
 # Importación de modelos
 from altas.models import Alta
@@ -106,6 +107,35 @@ def marcar_leida(request, pk):
     # Si la alerta tiene un link (ej: ir a ficha paciente), vamos allá.
     if noti.link:
         return redirect(noti.link)
+
+@login_required
+def api_obtener_notificaciones(request):
+    """
+    Vista invisible que responde al JavaScript con los datos nuevos
+    """
+    # 1. Buscamos las no leídas
+    notis = Notificacion.objects.filter(
+        usuario=request.user, 
+        leido=False
+    ).order_by('-fecha_creacion')[:5]
+    
+    # 2. Convertimos los datos a una lista simple
+    data = []
+    for n in notis:
+        data.append({
+            'id': n.id,
+            'titulo': n.titulo,
+            'mensaje': n.mensaje,
+            'tipo': n.tipo,
+            'fecha': n.fecha_creacion.strftime("%H:%M"), # Hora simple
+            'link': n.link if n.link else None
+        })
+    
+    # 3. Enviamos la respuesta JSON
+    return JsonResponse({
+        'cantidad': notis.count(),
+        'notificaciones': data
+    })
         
     # Si no, volvemos al home
     return redirect('app:home')
