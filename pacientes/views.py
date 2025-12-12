@@ -225,7 +225,7 @@ def historial_recepcion(request):
 # ==========================================
 
 @login_required
-@rol_requerido('administrativo', 'jefatura')
+@rol_requerido('administrativo')
 def admin_buscar_paciente(request):
     """
     Buscador de pacientes para Generar QR.
@@ -248,7 +248,7 @@ def admin_buscar_paciente(request):
     return render(request, 'pacientes/admin_buscar.html', {
         'madres': madres, 
         'query': query
-    }))
+    })
 
 @login_required
 @rol_requerido('administrativo',)
