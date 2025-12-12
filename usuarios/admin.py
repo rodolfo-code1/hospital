@@ -12,3 +12,9 @@ class UsuarioAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
         ('Información Adicional', {'fields': ('rol', 'rut', 'telefono')}),
     )
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        (None, {
+            'classes': ('wide',),
+            'fields': ('rut', 'email', 'rol'), # Agregamos RUT aquí para que lo pida al inicio
+        }),
+    )
