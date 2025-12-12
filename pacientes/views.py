@@ -15,6 +15,7 @@ from io import BytesIO
 from django.http import HttpResponse
 from usuarios.decorators import rol_requerido
 from django.urls import reverse
+from simple_history.utils import update_change_reason
 # ==========================================
 # VISTA RECEPCIONISTA: ADMISIÓN + ALERTA
 # ==========================================
@@ -283,3 +284,33 @@ def generar_qr_imagen(request, pk):
     buffer = BytesIO()
     img.save(buffer)
     return HttpResponse(buffer.getvalue(), content_type="image/png")
+
+# hospital/pacientes/views.py
+from simple_history.utils import update_change_reason
+
+@login_required
+def historial_trabajo_matrona(request):
+    """
+    Muestra TODAS las pacientes que la matrona ha tocado (editado),
+    independiente de quién las creó originalmente.
+    """
+    # 1. Consultamos la tabla histórica (HistoricalMadre)
+    # Buscamos registros donde el usuario del historial sea la matrona actual.
+    # .values_list('id', flat=True) nos da solo los IDs de las madres (ej: [1, 5, 20])
+    # .distinct() elimina duplicados (si editó 10 veces a la misma paciente, solo queremos el ID una vez)
+    
+    ids_gestionados = Madre.history.filter(
+        history_user=request.user
+    ).values_list('id', flat=True).distinct()
+    
+    # 2. Con esos IDs, buscamos las fichas reales en la tabla Madre
+    # Usamos id__in=... para filtrar solo las encontradas arriba
+    pacientes = Madre.objects.filter(id__in=ids_gestionados).order_by('-fecha_actualizacion')
+    
+    # 3. Renderizamos la misma lista que ya tienes diseñada
+    context = {
+        'madres': pacientes,
+        'titulo': 'Mi Historial de Atenciones',
+        'subtitulo': 'Pacientes gestionadas o editadas por mí'
+    }
+    return render(request, 'pacientes/lista_pacientes.html', context)
