@@ -227,12 +227,28 @@ def historial_recepcion(request):
 @login_required
 @rol_requerido('administrativo', 'jefatura')
 def admin_buscar_paciente(request):
-    """Buscador de pacientes para QR (Historial completo)."""
-    madres = Madre.objects.all().order_by('-fecha_ingreso')
+    """
+    Buscador de pacientes para Generar QR.
+    FILTRO: Solo muestra pacientes ACTIVAS (Hospitalizadas o con Alta Médica pendiente).
+    Oculta las que ya tienen 'Alta Administrativa' completa.
+    """
+    # Excluimos a las que ya se fueron (Alta Administrativa)
+    madres = Madre.objects.exclude(
+        estado_alta='alta_administrativa'
+    ).order_by('-fecha_ingreso')
+    
+    # Lógica de búsqueda por RUT o Nombre
     query = request.GET.get('q')
     if query:
-        madres = madres.filter(Q(rut__icontains=query) | Q(nombre__icontains=query))
-    return render(request, 'pacientes/admin_buscar.html', {'madres': madres, 'query': query})
+        madres = madres.filter(
+            Q(rut__icontains=query) | 
+            Q(nombre__icontains=query)
+        )
+    
+    return render(request, 'pacientes/admin_buscar.html', {
+        'madres': madres, 
+        'query': query
+    }))
 
 @login_required
 @rol_requerido('administrativo',)
