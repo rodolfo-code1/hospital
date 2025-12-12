@@ -54,9 +54,9 @@ def registrar_parto(request):
 def mis_registros_clinicos(request):
     """
     Panel de Turno: Muestra registros por usuario, fecha y turno específico.
-    Permite navegar al pasado.
+    COMBINACIÓN: Usa el historial para mostrar pacientes editados por la matrona.
     """
-    # Valores por defecto (Ahora)
+    # 1. Configuración Inicial (Defaults)
     ahora = timezone.localtime(timezone.now())
     fecha_seleccionada = ahora.date()
     
@@ -69,18 +69,18 @@ def mis_registros_clinicos(request):
         if ahora.hour < 8:
             fecha_seleccionada = ahora.date() - timedelta(days=1)
 
+    # 2. Procesar Formulario de Filtro
     form_filtro = FiltroTurnoForm(request.GET or None)
-    
     if form_filtro.is_valid():
         if form_filtro.cleaned_data['fecha']:
             fecha_seleccionada = form_filtro.cleaned_data['fecha']
         if form_filtro.cleaned_data['turno']:
             turno_seleccionado = form_filtro.cleaned_data['turno']
     else:
-        # Pre-llenar formulario con los defaults calculados
+        # Pre-llenar con defaults
         form_filtro = FiltroTurnoForm(initial={'fecha': fecha_seleccionada, 'turno': turno_seleccionado})
 
-    # Calcular rangos exactos según la selección
+    # 3. Calcular Rango Horario Exacto
     base_time = timezone.datetime.combine(fecha_seleccionada, timezone.datetime.min.time())
     base_time = timezone.make_aware(base_time)
 
@@ -93,28 +93,40 @@ def mis_registros_clinicos(request):
         fin_turno = (base_time + timedelta(days=1)).replace(hour=8, minute=0)
         nombre_turno = "Noche"
 
-    # Consultas filtradas
-    # A. FICHAS COMPLETADAS (Cambio de Lógica: Responsable Clínico)
-    madres = Madre.objects.filter(
-        creado_por=request.user,
-        fecha_actualizacion__range=(inicio_turno, fin_turno)
-    ).order_by('-fecha_actualizacion')
+    # ========================================================
+    # 4. CONSULTAS FILTRADAS (Lógica Combinada)
+    # ========================================================
+    
+    # A. CONSULTA INTELIGENTE DE MADRES (INGRESOS/EDICIONES)
+    # Buscamos en el HISTORIAL: ¿Qué fichas modificó esta usuaria en este horario?
+    # history_type='~' busca ediciones (updates). Si también quieres ver creaciones usa exclude() o quita el filtro.
+    ids_madres_gestionadas = Madre.history.filter(
+        history_user=request.user,
+        history_date__range=(inicio_turno, fin_turno)
+    ).values_list('id', flat=True).distinct()
+    
+    # Traemos las fichas reales basadas en lo que encontramos en el historial
+    madres = Madre.objects.filter(id__in=ids_madres_gestionadas).order_by('-fecha_actualizacion')
 
+    # B. PARTOS (Creados por ella)
     partos = Parto.objects.filter(
         creado_por=request.user,
         fecha_registro__range=(inicio_turno, fin_turno)
     ).select_related('madre').order_by('-fecha_registro')
 
+    # C. RECIÉN NACIDOS (Creados por ella)
     rns = RecienNacido.objects.filter(
         creado_por=request.user,
         fecha_registro__range=(inicio_turno, fin_turno)
     ).select_related('parto__madre').order_by('-fecha_registro')
 
+    # D. DERIVACIONES (Realizadas por ella)
     abortos = Aborto.objects.filter(
         matrona_derivadora=request.user,
         fecha_derivacion__range=(inicio_turno, fin_turno)
     ).select_related('madre').order_by('-fecha_derivacion')
 
+    # 5. Estadísticas
     stats = {
         'total_madres': madres.count(),
         'total_partos': partos.count(),
@@ -128,7 +140,7 @@ def mis_registros_clinicos(request):
         'fecha_actual': fecha_seleccionada,
         'inicio_turno': inicio_turno,
         'fin_turno': fin_turno,
-        'madres': madres,
+        'madres': madres,   # ¡Ahora incluye las que ella editó!
         'partos': partos,
         'rns': rns,
         'abortos': abortos,
