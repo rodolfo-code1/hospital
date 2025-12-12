@@ -108,4 +108,74 @@
 
     </div>
 </div>
+<script>
+    function actualizarNotificaciones() {
+        fetch("{% url 'app:api_notificaciones' %}")
+            .then(response => response.json())
+            .then(data => {
+                // 1. Si NO hay notificaciones, ocultar el panel
+                if (data.cantidad === 0) {
+                    const panel = document.getElementById('panel-notificaciones');
+                    if (panel) panel.style.display = 'none';
+                    return;
+                }
+
+                // 2. Si hay notificaciones, construir el HTML nuevo
+                let htmlContent = `
+                <div class="row mb-4" id="panel-notificaciones">
+                    <div class="col-12">
+                        <div class="card border-warning shadow">
+                            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-bell-fill"></i> Tienes ${data.cantidad} notificaciones nuevas
+                                </h5>
+                            </div>
+                            <div class="list-group list-group-flush">
+                `;
+
+                data.notificaciones.forEach(noti => {
+                    // Definir color si es urgente
+                    let claseColor = noti.tipo === 'urgente' ? 'bg-danger-subtle' : '';
+                    let icono = noti.tipo === 'urgente' ? '<i class="bi bi-exclamation-octagon-fill text-danger"></i>' : '';
+                    let textoBoton = noti.link ? 'Revisar' : 'Ocultar';
+                    
+                    // Crear URL para marcar leída (Truco para insertar el ID dinámico)
+                    let urlLeida = "{% url 'app:marcar_leida' 999999 %}".replace('999999', noti.id);
+
+                    htmlContent += `
+                        <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-start ${claseColor}">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">
+                                    ${icono} ${noti.titulo}
+                                </div>
+                                <span style="white-space: pre-line;">${noti.mensaje}</span>
+                                <div class="small text-muted mt-1">${noti.fecha}</div>
+                            </div>
+                            <a href="${urlLeida}" class="btn btn-sm btn-outline-dark">
+                                ${textoBoton}
+                            </a>
+                        </div>
+                    `;
+                });
+
+                htmlContent += `
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                `;
+
+                // 3. Reemplazar o insertar el HTML en la página
+                const contenedorExistente = document.getElementById('contenedor-alertas');
+                if (contenedorExistente) {
+                    contenedorExistente.innerHTML = htmlContent;
+                }
+            })
+            .catch(error => console.error('Error cargando notificaciones:', error));
+    }
+
+    // Ejecutar la función cada 5 segundos (5000 milisegundos)
+    setInterval(actualizarNotificaciones, 5000);
+</script>
+{% endblock %}
 {% endblock %}
