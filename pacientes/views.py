@@ -164,16 +164,24 @@ def ver_ficha_clinica(request, pk):
 @login_required
 def editar_ficha_clinica(request, pk):
     madre = get_object_or_404(Madre, pk=pk)
+    
     if request.method == 'POST':
-        form = MadreForm(request.POST, instance=madre)
+        # CORRECCIÓN: Usar MadreRecepcionForm para que aparezca el semáforo y se guarde
+        form = MadreRecepcionForm(request.POST, instance=madre)
+        
         if form.is_valid():
             form.save()
             messages.success(request, 'Ficha actualizada.')
             return redirect('pacientes:ver_ficha', pk=madre.pk)
     else:
-        form = MadreForm(instance=madre)
-    return render(request, 'pacientes/registrar_madre.html', {'form': form, 'titulo': 'Editar Ficha', 'subtitulo': f'{madre.nombre}'})
-
+        # CORRECCIÓN AQUÍ TAMBIÉN
+        form = MadreRecepcionForm(instance=madre)
+    
+    return render(request, 'pacientes/registrar_madre.html', {
+        'form': form,
+        'titulo': 'Editar Ficha',
+        'subtitulo': f'{madre.nombre}'
+    })
 # Compatibilidad
 @login_required
 def registrar_madre(request): return redirect('pacientes:admision_madre')
