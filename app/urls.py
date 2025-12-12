@@ -4,8 +4,10 @@ from . import views
 
 app_name = 'app'
 
+
 urlpatterns = [
     path('', views.home, name='home'),
-    # Agregar esta línea:
     path('notificacion/leida/<int:pk>/', views.marcar_leida, name='marcar_leida'),
+    
+    path('api/notificaciones/', views.api_obtener_notificaciones, name='api_notificaciones'),
 ]
