@@ -85,7 +85,7 @@ def registro_view(request):
                 f'Cuenta creada exitosamente. Bienvenido {user.get_full_name()} como {user.get_rol_display()}'
             )
             login(request, user)
-            return redirect('app:home')  # <--- CAMBIO AQUÍ
+            return redirect('app:home')
     else:
         form = RegistroUsuarioForm()
     
@@ -374,28 +374,43 @@ def crear_password_activacion(request):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
             user = Usuario.objects.get(pk=uid)
-        except:
+        except Exception:
             user = None
 
+        # Token inválido
         if not user or not default_token_generator.check_token(user, token):
             messages.error(request, "El enlace ya expiró o no es válido.")
             return redirect('usuarios:login')
 
+        # Contraseñas distintas
         if password1 != password2:
             messages.error(request, "Las contraseñas no coinciden.")
-            return redirect(request.path)
+            return render(request, "usuarios/crear_password.html", {
+                "uidb64": uidb64,
+                "token": token
+            })
 
+        # Contraseña muy corta
         if len(password1) < 8:
             messages.error(request, "La contraseña debe tener mínimo 8 caracteres.")
-            return redirect(request.path)
+            return render(request, "usuarios/crear_password.html", {
+                "uidb64": uidb64,
+                "token": token
+            })
 
-        # activar y guardar contraseña
+        # ✅ Activar usuario y guardar contraseña
         user.set_password(password1)
         user.is_active = True
         user.save()
 
-        messages.success(request, "Contraseña creada exitosamente. Ahora puedes iniciar sesión.")
+        messages.success(
+            request,
+            "Contraseña creada exitosamente. Ahora puedes iniciar sesión."
+        )
         return redirect('usuarios:login')
+
+    return redirect('usuarios:login')
+
 
 @login_required
 @encargado_ti_requerido
