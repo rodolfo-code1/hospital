@@ -91,13 +91,15 @@ def registro_view(request):
     
     return render(request, 'usuarios/registro.html', {'form': form})
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import login
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from .models import Usuario
+from django.contrib.auth import get_user_model
+
+Usuario = get_user_model()
 
 def login_view(request):
-    """Vista de inicio de sesión robusta"""
     if request.user.is_authenticated:
         return redirect('app:home')
     
@@ -105,22 +107,48 @@ def login_view(request):
         raw_username = request.POST.get('username', '')
         password = request.POST.get('password')
         
-        # Limpieza del RUT: eliminar puntos y guiones
         username_limpio = raw_username.replace('.', '').replace('-', '')
-        
-        
-        user = authenticate(request, username=username_limpio, password=password)
-        
-        if user is not None:
-            login(request, user)
-            registrar_login(request, user, exitoso=True)
-            messages.success(request, f'Bienvenido {user.get_full_name()}')
-            next_url = request.GET.get('next', 'app:home')
-            return redirect(next_url)
-        else:
-            registrar_login(request, None, exitoso=False, razon_fallo='RUT o contraseña incorrectos')
+
+        try:
+            user_obj = Usuario.objects.get(username=username_limpio)
+        except Usuario.DoesNotExist:
+            registrar_login(
+                request,
+                None,
+                exitoso=False,
+                razon_fallo='Usuario no existe'
+            )
             messages.error(request, 'RUT o contraseña incorrectos.')
-    
+            return render(request, 'usuarios/login.html')
+
+        if not user_obj.check_password(password):
+            registrar_login(
+                request,
+                user_obj,
+                exitoso=False,
+                razon_fallo='Contraseña incorrecta'
+            )
+            messages.error(request, 'RUT o contraseña incorrectos.')
+            return render(request, 'usuarios/login.html')
+
+        if not user_obj.is_active:
+            registrar_login(
+                request,
+                user_obj,
+                exitoso=False,
+                razon_fallo='Cuenta desactivada'
+            )
+            messages.error(
+                request,
+                'Tu cuenta está desactivada.'
+            )
+            return render(request, 'usuarios/login.html')
+
+        login(request, user_obj)
+        registrar_login(request, user_obj, exitoso=True)
+        messages.success(request, f'Bienvenido {user_obj.get_full_name()}')
+        return redirect(request.GET.get('next', 'app:home'))
+
     return render(request, 'usuarios/login.html')
 
   
@@ -230,7 +258,10 @@ def perfil_view(request):
 @encargado_ti_requerido
 def gestion_usuarios(request):
     q = request.GET.get('q', '').strip()
-    usuarios = Usuario.objects.all().order_by('-date_joined')
+
+    usuarios = Usuario.objects.filter(
+        is_superuser=False
+    ).order_by('-date_joined')
 
     if q:
         usuarios = usuarios.filter(
@@ -250,7 +281,8 @@ def gestion_usuarios(request):
 @encargado_ti_requerido
 def obtener_usuarios(request):
     q = request.GET.get('q', '').strip()
-    usuarios = Usuario.objects.all()
+
+    usuarios = Usuario.objects.filter(is_superuser=False)
 
     if q:
         usuarios = usuarios.filter(
@@ -261,11 +293,13 @@ def obtener_usuarios(request):
             Q(rol__icontains=q)
         )
 
-    tabla_html = render_to_string('usuarios/partials/obtener_usuarios.html', {
-        'usuarios': usuarios
-    })
+    tabla_html = render_to_string(
+        'usuarios/partials/obtener_usuarios.html',
+        {'usuarios': usuarios}
+    )
 
     return JsonResponse({'tabla': tabla_html})
+
 
 @login_required
 @encargado_ti_requerido
