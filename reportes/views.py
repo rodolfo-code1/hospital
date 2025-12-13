@@ -16,6 +16,14 @@ from .excel_export import (
     descargar_excel_response
 )
 from .excel_export import crear_libro_export_madres
+from .pdf_export import (
+    crear_pdf_seccion_a,
+    crear_pdf_seccion_b,
+    crear_pdf_seccion_c,
+    crear_pdf_seccion_d,
+    crear_pdf_export_madres,
+    descargar_pdf_response
+)
 from usuarios.decorators import supervisor_requerido
 
 # ==========================================
@@ -475,3 +483,123 @@ def descargar_export_madres(request):
     wb = crear_libro_export_madres(fecha_inicio, fecha_fin)
     nombre = f"Export_Madres_Partos_REM_{fecha_inicio}_{fecha_fin}.xlsx"
     return descargar_excel_response(wb, nombre)
+
+
+# ==========================================
+# DESCARGAS PDF DE REPORTES REM
+# ==========================================
+
+@login_required
+@supervisor_requerido
+def descargar_pdf_seccion_a(request):
+    """Descargar PDF de Sección A"""
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    # Manejar valores None o strings 'None'
+    if not fecha_inicio or fecha_inicio == 'None':
+        fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = datetime.fromisoformat(fecha_inicio).date()
+    
+    if not fecha_fin or fecha_fin == 'None':
+        fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = datetime.fromisoformat(fecha_fin).date()
+    
+    pdf_buffer = crear_pdf_seccion_a(fecha_inicio, fecha_fin)
+    nombre = f"Seccion_A_Partos_{fecha_inicio}_{fecha_fin}.pdf"
+    return descargar_pdf_response(pdf_buffer, nombre)
+
+
+@login_required
+@supervisor_requerido
+def descargar_pdf_seccion_b(request):
+    """Descargar PDF de Sección B"""
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    # Manejar valores None o strings 'None'
+    if not fecha_inicio or fecha_inicio == 'None':
+        fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = datetime.fromisoformat(fecha_inicio).date()
+    
+    if not fecha_fin or fecha_fin == 'None':
+        fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = datetime.fromisoformat(fecha_fin).date()
+    
+    pdf_buffer = crear_pdf_seccion_b(fecha_inicio, fecha_fin)
+    nombre = f"Seccion_B_Abortos_{fecha_inicio}_{fecha_fin}.pdf"
+    return descargar_pdf_response(pdf_buffer, nombre)
+
+
+@login_required
+@supervisor_requerido
+def descargar_pdf_seccion_c(request):
+    """Descargar PDF de Sección C"""
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    # Manejar valores None o strings 'None'
+    if not fecha_inicio or fecha_inicio == 'None':
+        fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = datetime.fromisoformat(fecha_inicio).date()
+    
+    if not fecha_fin or fecha_fin == 'None':
+        fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = datetime.fromisoformat(fecha_fin).date()
+    
+    pdf_buffer = crear_pdf_seccion_c(fecha_inicio, fecha_fin)
+    nombre = f"Seccion_C_Anticonceptivos_{fecha_inicio}_{fecha_fin}.pdf"
+    return descargar_pdf_response(pdf_buffer, nombre)
+
+
+@login_required
+@supervisor_requerido
+def descargar_pdf_seccion_d(request):
+    """Descargar PDF de Sección D"""
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+    
+    # Manejar valores None o strings 'None'
+    if not fecha_inicio or fecha_inicio == 'None':
+        fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = datetime.fromisoformat(fecha_inicio).date()
+    
+    if not fecha_fin or fecha_fin == 'None':
+        fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = datetime.fromisoformat(fecha_fin).date()
+    
+    pdf_buffer = crear_pdf_seccion_d(fecha_inicio, fecha_fin)
+    nombre = f"Seccion_D_RecienNacidos_{fecha_inicio}_{fecha_fin}.pdf"
+    return descargar_pdf_response(pdf_buffer, nombre)
+
+
+@login_required
+@supervisor_requerido
+def descargar_pdf_export_madres(request):
+    """Descargar PDF completo: Madres+Partos+REM"""
+    fecha_inicio = request.GET.get('fecha_inicio')
+    fecha_fin = request.GET.get('fecha_fin')
+
+    # Manejar valores None o strings 'None'
+    if not fecha_inicio or fecha_inicio == 'None':
+        fecha_inicio = (timezone.now() - timedelta(days=30)).date()
+    else:
+        fecha_inicio = datetime.fromisoformat(fecha_inicio).date()
+
+    if not fecha_fin or fecha_fin == 'None':
+        fecha_fin = timezone.now().date()
+    else:
+        fecha_fin = datetime.fromisoformat(fecha_fin).date()
+
+    pdf_buffer = crear_pdf_export_madres(fecha_inicio, fecha_fin)
+    nombre = f"Export_Madres_Partos_REM_{fecha_inicio}_{fecha_fin}.pdf"
+    return descargar_pdf_response(pdf_buffer, nombre)
+

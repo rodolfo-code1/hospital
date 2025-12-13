@@ -25,9 +25,12 @@
                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Filtros</h5>
                     <div class="btn-group btn-group-sm" role="group">
-                        <a href="{% url 'reportes:descargar_seccion_d' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" class="btn btn-success" title="Descargar Sección D">
-                            <i class="bi bi-file-earmark-excel"></i> Descargar Excel
-                        </a>
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalDescargarSeccionD" title="Descargar Sección D en Excel">
+                            <i class="bi bi-file-earmark-excel"></i> Excel
+                        </button>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#modalDescargarSeccionD" title="Descargar Sección D en PDF">
+                            <i class="bi bi-file-earmark-pdf"></i> PDF
+                        </button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -225,6 +228,35 @@
             <a href="{% url 'app:home' %}" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Volver al Dashboard
             </a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Descargar Sección D -->
+<div class="modal fade" id="modalDescargarSeccionD" tabindex="-1" aria-labelledby="modalDescargarSeccionDLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDescargarSeccionDLabel">
+                    <i class="bi bi-download"></i> Descargar Reporte
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3" role="alert">
+                    <i class="bi bi-info-circle"></i> <strong>Importante:</strong> Si no ha filtrado un rango de fechas, el reporte mostrará los datos de los últimos 30 días.
+                </div>
+                <p class="text-muted">Seleccione el formato de descarga:</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <a href="{% url 'reportes:descargar_seccion_d' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel"></i> Descargar Excel
+                </a>
+                <a href="{% url 'reportes:descargar_pdf_seccion_d' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}" class="btn btn-danger">
+                    <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+                </a>
+            </div>
         </div>
     </div>
 </div>
