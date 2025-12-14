@@ -96,62 +96,103 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from .models import Usuario
 from django.contrib.auth import get_user_model
+from .models import CodigoLogin
+import random
 
 Usuario = get_user_model()
 
 def login_view(request):
     if request.user.is_authenticated:
         return redirect('app:home')
-    
+
     if request.method == 'POST':
-        raw_username = request.POST.get('username', '')
+        username = request.POST.get('username', '').replace('.', '').replace('-', '')
         password = request.POST.get('password')
-        
-        username_limpio = raw_username.replace('.', '').replace('-', '')
 
         try:
-            user_obj = Usuario.objects.get(username=username_limpio)
+            user = Usuario.objects.get(username=username)
         except Usuario.DoesNotExist:
-            registrar_login(
-                request,
-                None,
-                exitoso=False,
-                razon_fallo='Usuario no existe'
-            )
             messages.error(request, 'RUT o contraseña incorrectos.')
             return render(request, 'usuarios/login.html')
 
-        if not user_obj.check_password(password):
-            registrar_login(
-                request,
-                user_obj,
-                exitoso=False,
-                razon_fallo='Contraseña incorrecta'
-            )
+        if not user.check_password(password):
+            registrar_login(request, user, exitoso=False, razon_fallo='Contraseña incorrecta')
             messages.error(request, 'RUT o contraseña incorrectos.')
             return render(request, 'usuarios/login.html')
 
-        if not user_obj.is_active:
-            registrar_login(
-                request,
-                user_obj,
-                exitoso=False,
-                razon_fallo='Cuenta desactivada'
-            )
-            messages.error(
-                request,
-                'Tu cuenta está desactivada.'
-            )
+        if not user.is_active:
+            messages.error(request, 'Cuenta desactivada.')
             return render(request, 'usuarios/login.html')
 
-        login(request, user_obj)
-        registrar_login(request, user_obj, exitoso=True)
-        messages.success(request, f'Bienvenido {user_obj.get_full_name()}')
-        return redirect(request.GET.get('next', 'app:home'))
+        # enviar código
+        enviar_codigo_login(user)
+        request.session['2fa_user_id'] = user.id
+
+        messages.info(request, 'Te enviamos un código a tu correo.')
+        return redirect('usuarios:verificar_codigo')
 
     return render(request, 'usuarios/login.html')
 
-  
+def enviar_codigo_login(usuario):
+    codigo = str(random.randint(100000, 999999))
+
+    CodigoLogin.objects.create(
+        usuario=usuario,
+        codigo=codigo
+    )
+
+    send_mail(
+        subject="Código de acceso - Sistema de Trazabilidad",
+        message=(
+            f"Hola {usuario.get_full_name()},\n\n"
+            f"Tu código de acceso es:\n\n"
+            f"{codigo}\n\n"
+            f"Este código es válido por 5 minutos."
+        ),
+        from_email=settings.EMAIL_FROM,
+        recipient_list=[usuario.email],
+        fail_silently=False,
+    )
+
+def verificar_codigo(request):
+    user_id = request.session.get('2fa_user_id')
+
+    if not user_id:
+        return redirect('usuarios:login')
+
+    user = Usuario.objects.get(id=user_id)
+
+    if request.method == 'POST':
+        codigo_ingresado = request.POST.get('codigo')
+
+        try:
+            codigo = CodigoLogin.objects.filter(
+                usuario=user,
+                codigo=codigo_ingresado,
+                usado=False
+            ).latest('creado')
+        except CodigoLogin.DoesNotExist:
+            messages.error(request, 'Código incorrecto o expirado.')
+            return redirect('usuarios:login')
+
+        if not codigo.es_valido():
+            messages.error(request, 'Código expirado.')
+            return redirect('usuarios:login')
+
+        # Código válido
+        codigo.usado = True
+        codigo.save()
+
+        login(request, user)
+        registrar_login(request, user, exitoso=True)
+
+        del request.session['2fa_user_id']
+
+        messages.success(request, f'Bienvenido {user.get_full_name()}')
+        return redirect('app:home')
+
+    return render(request, 'usuarios/verificar_codigo.html')
+ 
 def solicitar_reset_pw(request):
     if request.method == 'POST':
         form = ResetPasswordRUTForm(request.POST)

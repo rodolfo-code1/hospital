@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5" style="max-width: 400px;">
+    <h4 class="text-center mb-3">Verificación de Código</h4>
+
+    <form method="post">
+        {% csrf_token %}
+        <label class="form-label">Código recibido por correo</label>
+        <input type="text" name="codigo" class="form-control text-center" maxlength="6" required>
+
+        <button class="btn btn-primary w-100 mt-3">
+            Verificar
+        </button>
+    </form>
+</div>
+{% endblock %}
