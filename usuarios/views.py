@@ -161,6 +161,9 @@ def verificar_codigo(request):
         return redirect('usuarios:login')
 
     user = Usuario.objects.get(id=user_id)
+    
+    # --- CAMBIO 1: Capturar el next de la URL o del formulario ---
+    next_url = request.GET.get('next') or request.POST.get('next')
 
     if request.method == 'POST':
         codigo_ingresado = request.POST.get('codigo')
@@ -172,10 +175,12 @@ def verificar_codigo(request):
                 usado=False
             ).latest('creado')
         except CodigoLogin.DoesNotExist:
-            messages.error(request, 'Código incorrecto o expirado.')
-            return redirect('usuarios:verificar_codigo')
+            # ... (tus mensajes de error) ...
+            # Importante: Pasar next de vuelta en el redirect de error si quieres persistencia total
+            return redirect('usuarios:verificar_codigo') 
+        
         if not codigo.es_valido():
-            messages.error(request, 'Código expirado.')
+            # ... (tus mensajes de error) ...
             return redirect('usuarios:verificar_codigo')
 
         # Código válido
@@ -188,9 +193,14 @@ def verificar_codigo(request):
         del request.session['2fa_user_id']
 
         messages.success(request, f'Bienvenido {user.get_full_name()}')
+        
+        # --- CAMBIO 2: Redirigir a la ficha QR si existe next ---
+        if next_url:
+            return redirect(next_url)
         return redirect('app:home')
 
-    return render(request, 'usuarios/verificar_codigo.html')
+    # --- CAMBIO 3: Pasar la variable 'next' al template HTML ---
+    return render(request, 'usuarios/verificar_codigo.html', {'next': next_url})
  
 def solicitar_reset_pw(request):
     if request.method == 'POST':
