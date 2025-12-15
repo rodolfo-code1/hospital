@@ -101,49 +101,67 @@ import random
 
 Usuario = get_user_model()
 
-# hospital/usuarios/views.py
 
 def login_view(request):
-    # ... (validaciones de usuario y contraseña anteriores se mantienen igual) ...
-    # ... if not user.check_password ... etc ...
+    # 1. Si ya está logueado, redirigir al home
+    if request.user.is_authenticated:
+        return redirect('app:home')
 
-    if not user.is_active:
-        messages.error(request, 'Cuenta desactivada.')
-        return render(request, 'usuarios/login.html')
+    # 2. Procesar el formulario solo si es POST
+    if request.method == 'POST':
+        username = request.POST.get('username', '').replace('.', '').replace('-', '')
+        password = request.POST.get('password')
 
-    # === INICIO DE LA LÓGICA DE EXCEPCIÓN QR ===
-    
-    # 1. Detectamos a dónde quiere ir el usuario
-    next_url = request.POST.get('next') or request.GET.get('next') or ''
-    
-    # 2. Definimos las rutas "seguras" que no piden 2FA (Las del QR)
-    # Estas palabras deben coincidir con tus URLs de fichas
-    rutas_exentas_2fa = ['/ficha-qr/', '/ficha-digital/']
-    
-    # 3. Verificamos si el destino contiene alguna ruta exenta
-    es_acceso_qr = any(ruta in next_url for ruta in rutas_exentas_2fa)
+        try:
+            user = Usuario.objects.get(username=username)
+        except Usuario.DoesNotExist:
+            messages.error(request, 'RUT o contraseña incorrectos.')
+            return render(request, 'usuarios/login.html')
 
-    if es_acceso_qr:
-        # --> CASO QR: Login directo (Saltar 2FA)
-        login(request, user)
-        registrar_login(request, user, exitoso=True)
-        messages.success(request, f'Bienvenido(a) {user.first_name}')
-        return redirect(next_url)
+        if not user.check_password(password):
+            registrar_login(request, user, exitoso=False, razon_fallo='Contraseña incorrecta')
+            messages.error(request, 'RUT o contraseña incorrectos.')
+            return render(request, 'usuarios/login.html')
+
+        # --- IMPORTANTE: Todo esto debe estar indentado dentro del IF POST ---
         
-    # === FIN DE LA LÓGICA QR ===
+        if not user.is_active:
+            messages.error(request, 'Cuenta desactivada.')
+            return render(request, 'usuarios/login.html')
 
-    # --> CASO NORMAL: Flujo de 2FA (Correo)
-    enviar_codigo_login(user)
-    request.session['2fa_user_id'] = user.id
-
-    messages.info(request, 'Te enviamos un código a tu correo.')
-    
-    # Mantenemos el 'next' para que funcione el arreglo anterior
-    response = redirect('usuarios:verificar_codigo')
-    if next_url:
-        response['Location'] += f'?next={next_url}'
+        # === INICIO LÓGICA QR (BYPASS 2FA) ===
+        # Detectamos a dónde quiere ir el usuario
+        next_url = request.POST.get('next') or request.GET.get('next') or ''
         
-    return response
+        # Rutas que no pedirán código de correo
+        rutas_exentas_2fa = ['/ficha-qr/', '/ficha-digital/', '/recien-nacidos/ficha-qr/', '/pacientes/ficha-digital/']
+        
+        es_acceso_qr = any(ruta in next_url for ruta in rutas_exentas_2fa)
+
+        if es_acceso_qr:
+            # Login directo sin código
+            login(request, user)
+            registrar_login(request, user, exitoso=True)
+            messages.success(request, f'Bienvenido(a) {user.first_name}')
+            # Redirigir directamente a la ficha
+            return redirect(next_url)
+        # === FIN LÓGICA QR ===
+
+        # Si no es QR, seguimos con el flujo normal de 2FA
+        enviar_codigo_login(user)
+        request.session['2fa_user_id'] = user.id
+
+        messages.info(request, 'Te enviamos un código a tu correo.')
+        
+        # Redirigir a verificar código, pasando el 'next' si existe
+        response = redirect('usuarios:verificar_codigo')
+        if next_url:
+            response['Location'] += f'?next={next_url}'
+            
+        return response
+
+    # 3. Si es GET (cargar página), solo mostrar el formulario
+    return render(request, 'usuarios/login.html')
 
 def enviar_codigo_login(usuario):
     codigo = str(random.randint(100000, 999999))
