@@ -173,11 +173,10 @@ def verificar_codigo(request):
             ).latest('creado')
         except CodigoLogin.DoesNotExist:
             messages.error(request, 'Código incorrecto o expirado.')
-            return redirect('usuarios:login')
-
+            return redirect('usuarios:verificar_codigo')
         if not codigo.es_valido():
             messages.error(request, 'Código expirado.')
-            return redirect('usuarios:login')
+            return redirect('usuarios:verificar_codigo')
 
         # Código válido
         codigo.usado = True
