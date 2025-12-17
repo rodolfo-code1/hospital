@@ -1,11 +1,20 @@
-# usuarios/models.py
-# usuarios/models.py
+# hospital/usuarios/models.py
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from datetime import timedelta
 
 class Usuario(AbstractUser):
+    """
+    Modelo de Usuario Personalizado.
+    Extiende 'AbstractUser' de Django para agregar atributos específicos del negocio.
+    
+    Roles:
+    - Médico/Matrona: Acceso clínico (Partos, Altas, Pacientes).
+    - Administrativo: Acceso a gestión de brazaletes y cierre de altas.
+    - Supervisor: Acceso a reportes REM.
+    - Encargado TI: Gestión de usuarios y respaldos.
+    """
     ROLES = [
         ('medico', 'Médico'),
         ('matrona', 'Matrona'),
@@ -14,12 +23,14 @@ class Usuario(AbstractUser):
         ('encargado_ti', 'Encargado TI'),
         ('recepcionista', 'Recepcionista'),
     ]
+    
     rol = models.CharField(
         max_length=20,
         choices=ROLES,
         default='administrativo',
         verbose_name="Rol"
     )
+    # El RUT es único en el sistema para evitar duplicidad de cuentas
     rut = models.CharField(
         max_length=12,
         unique=True,
@@ -39,6 +50,7 @@ class Usuario(AbstractUser):
     def __str__(self):
         return f"{self.get_full_name()} - {self.get_rol_display()}"
     
+    # --- Métodos Helper para verificar permisos en templates/vistas ---
     def es_medico(self):
         return self.rol == 'medico'
     
@@ -56,7 +68,11 @@ class Usuario(AbstractUser):
 
 
 class AuditoriaLogin(models.Model):
-    """Registro de auditoría de inicios de sesión"""
+    """
+    Tabla de Auditoría de Accesos.
+    Registra cada intento de inicio o cierre de sesión, incluyendo IP y Navegador.
+    Vital para cumplir normas de seguridad de la información en salud.
+    """
     TIPO_EVENTO = [
         ('login', 'Inicio de Sesión'),
         ('logout', 'Cierre de Sesión'),
@@ -75,6 +91,8 @@ class AuditoriaLogin(models.Model):
     direccion_ip = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True, verbose_name="Navegador/Dispositivo")
     session_key = models.CharField(max_length=40, blank=True, null=True)
+    
+    # Campo para registrar qué usuario intentaron usar en caso de login fallido
     nombre_usuario = models.CharField(max_length=150, blank=True, verbose_name="Nombre Usuario Intentado")
     exitoso = models.BooleanField(default=True)
     razon_fallo = models.CharField(max_length=255, blank=True)
@@ -94,7 +112,11 @@ class AuditoriaLogin(models.Model):
 
 
 class AuditoriaModificacion(models.Model):
-    """Registro de auditoría de modificaciones de datos"""
+    """
+    Tabla de Auditoría de Cambios de Datos.
+    Se llena automáticamente mediante Signals (signals.py) cuando se crea, edita
+    o elimina un registro clínico (Parto, RN, Alta, Madre).
+    """
     TIPO_OPERACION = [
         ('create', 'Creación'),
         ('update', 'Modificación'),
@@ -113,6 +135,8 @@ class AuditoriaModificacion(models.Model):
     modelo = models.CharField(max_length=100, verbose_name="Modelo Afectado")
     id_objeto = models.IntegerField(verbose_name="ID del Objeto")
     descripcion = models.TextField(verbose_name="Descripción del Cambio", blank=True)
+    
+    # Almacenamiento JSON para guardar el estado anterior y nuevo (trazabilidad completa)
     valores_anteriores = models.JSONField(default=dict, blank=True)
     valores_nuevos = models.JSONField(default=dict, blank=True)
     session_key = models.CharField(max_length=40, blank=True, null=True)
@@ -132,6 +156,10 @@ class AuditoriaModificacion(models.Model):
 
 
 class CodigoLogin(models.Model):
+    """
+    Modelo para Autenticación de Dos Factores (2FA).
+    Almacena códigos temporales de 6 dígitos enviados al correo.
+    """
     usuario = models.ForeignKey(
         'usuarios.Usuario',
         on_delete=models.CASCADE
@@ -141,7 +169,7 @@ class CodigoLogin(models.Model):
     usado = models.BooleanField(default=False)
 
     def es_valido(self):
-        # válido por 5 minutos
+        # El código expira a los 5 minutos de su creación
         return (
             not self.usado and
             timezone.now() <= self.creado + timedelta(minutes=5)

@@ -1,3 +1,4 @@
+# hospital/partos/forms.py
 from django import forms
 from .models import Parto, Aborto
 from usuarios.models import Usuario
@@ -5,8 +6,14 @@ from pacientes.models import Madre
 
 class PartoForm(forms.ModelForm):
     """
-    Formulario para registrar parto.
-    Validación: Impide registrar parto si ya existe Parto O Aborto en este ingreso.
+    Formulario principal para registrar un Parto.
+    Utilizado por Matronas en turno.
+    
+    Validación de Negocio (clean_madre):
+    Impide registrar un parto si:
+    1. La paciente no está hospitalizada.
+    2. Ya existe un parto registrado para este ingreso.
+    3. Existe un proceso de Aborto/IVE activo (incoherencia clínica).
     """
     class Meta:
         model = Parto
@@ -35,8 +42,10 @@ class PartoForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        """Inicializa los selectores con usuarios reales del sistema."""
         super().__init__(*args, **kwargs)
         
+        # Cargar lista de médicos y jefes
         medicos = Usuario.objects.filter(rol__in=['medico', 'jefatura']).order_by('first_name')
         opciones_medicos = [('', 'Seleccione Médico...')] + [
             (u.get_full_name() if u.get_full_name().strip() else u.username, 
@@ -44,6 +53,7 @@ class PartoForm(forms.ModelForm):
             for u in medicos
         ]
         
+        # Cargar lista de matronas
         matronas = Usuario.objects.filter(rol='matrona').order_by('first_name')
         opciones_matronas = [('', 'Seleccione Matrona...')] + [
             (u.get_full_name() if u.get_full_name().strip() else u.username, 
@@ -54,22 +64,25 @@ class PartoForm(forms.ModelForm):
         self.fields['medico_responsable'].widget.choices = opciones_medicos
         self.fields['matrona_responsable'].widget.choices = opciones_matronas
 
-        # Solo madres hospitalizadas
+        # Filtro de seguridad: Solo madres activas en el hospital
         self.fields['madre'].queryset = Madre.objects.filter(estado_alta='hospitalizado')
 
     def clean_madre(self):
-        """VALIDACIÓN: Solo 1 evento (Parto o Aborto) por ingreso."""
+        """VALIDACIÓN CLÍNICA: Solo 1 evento (Parto o Aborto) por ingreso."""
         madre = self.cleaned_data.get('madre')
         
         if not madre: return None
         
+        # Solo validamos al crear, no al editar (pk es None)
         if not self.instance.pk:
             if madre.estado_alta != 'hospitalizado':
                 raise forms.ValidationError(f"Paciente {madre.nombre} no está hospitalizada.")
 
+            # Regla: No duplicar partos
             if Parto.objects.filter(madre=madre, fecha_registro__gte=madre.fecha_ingreso).exists():
                 raise forms.ValidationError(f"La paciente ya tiene un PARTO registrado en este ingreso.")
 
+            # Regla: Incoherencia clínica (Parto vs Aborto)
             if Aborto.objects.filter(madre=madre, fecha_derivacion__gte=madre.fecha_ingreso).exists():
                 raise forms.ValidationError(f"La paciente ya tiene un proceso de ABORTO/IVE en curso.")
         
@@ -77,7 +90,10 @@ class PartoForm(forms.ModelForm):
 
 
 class DerivacionAbortoForm(forms.ModelForm):
-    """Formulario para derivar a médico (IVE/Aborto)."""
+    """
+    Formulario para la Matrona: Derivar caso sospechoso o IVE al Médico.
+    Incluye validaciones similares para evitar duplicidad.
+    """
     class Meta:
         model = Aborto
         fields = ['madre', 'observacion_matrona']
@@ -106,7 +122,9 @@ class DerivacionAbortoForm(forms.ModelForm):
 
 
 class ResolverAbortoForm(forms.ModelForm):
-    """Formulario para el Médico: Resolución"""
+    """
+    Formulario para el Médico: Resolución del caso (Confirmar diagnóstico).
+    """
     class Meta:
         model = Aborto
         fields = ['tipo', 'causal', 'diagnostico_final']
@@ -118,7 +136,10 @@ class ResolverAbortoForm(forms.ModelForm):
 
 
 class FiltroTurnoForm(forms.Form):
-    """Filtro para el panel de turnos de la matrona"""
+    """
+    Filtro para el panel 'Mi Turno' de la matrona.
+    Permite visualizar registros históricos por fecha y bloque horario (Día/Noche).
+    """
     fecha = forms.DateField(
         required=False, 
         widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),

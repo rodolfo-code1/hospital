@@ -19,7 +19,7 @@ from .decorators import encargado_ti_requerido
 from django.http import HttpRequest
 
 def get_client_ip(request: HttpRequest):
-    """Obtiene la IP del cliente"""
+    """Helper para obtener la IP real del cliente (incluso detrás de proxies)."""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
         ip = x_forwarded_for.split(',')[0]

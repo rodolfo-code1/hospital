@@ -22,7 +22,19 @@ from pacientes.models import Madre
 
 def crear_pdf_seccion_a(fecha_inicio, fecha_fin):
     """
-    Exporta Sección A: Información General de Partos (REM) a PDF
+    Genera el PDF para la Sección A: Información General de Partos.
+    
+    Estructura del Informe:
+    1. Título y periodo consultado.
+    2. Tabla Resumen: Tipos de parto cruzado con edad materna y peso del RN.
+    3. Tablas Específicas: Prematuros, Apego, Lactancia, Nacionalidad, Acompañamiento.
+    
+    Args:
+        fecha_inicio (date): Inicio del rango de filtro.
+        fecha_fin (date): Fin del rango de filtro.
+        
+    Returns:
+        BytesIO: Buffer en memoria que contiene el archivo PDF binario.
     """
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)

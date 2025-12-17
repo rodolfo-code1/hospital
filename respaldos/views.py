@@ -10,6 +10,21 @@ from usuarios.decorators import encargado_ti_requerido
 @login_required
 @encargado_ti_requerido
 def generar_respaldo(request):
+    """
+    Genera y descarga un respaldo completo de la base de datos (SQL Dump).
+    
+    Funcionalidad:
+    Recorre todas las tablas del esquema actual y genera un script SQL que permite
+    reconstruir la base de datos desde cero (Estructura + Datos).
+    
+    Seguridad:
+    - Decorador @encargado_ti_requerido: CRÍTICO. Solo el personal de TI puede
+      descargar la base de datos completa, ya que contiene datos sensibles
+      de pacientes (Ley de Protección de Datos).
+    
+    Returns:
+        HttpResponse: Archivo .sql adjunto para descarga inmediata.
+    """
     now = datetime.datetime.now().strftime("%Y%m%d_%H%M")
     filename = f"respaldo_{now}.sql"
 

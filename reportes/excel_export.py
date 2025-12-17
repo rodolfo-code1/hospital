@@ -17,7 +17,19 @@ from django.db.models import Count, Q
 
 def crear_libro_excel_seccion_a(fecha_inicio, fecha_fin):
     """
-    Exporta Sección A: Información General de Partos (REM)
+    Genera el reporte Excel para la Sección A: Información General de Partos (REM).
+    
+    Incluye estadísticas desglosadas por:
+    - Tipo de parto cruzado con edad materna y peso del RN.
+    - Prematuridad (semanas de gestación).
+    - Indicadores de calidad (Apego, Lactancia, Acompañamiento).
+    
+    Args:
+        fecha_inicio (date): Fecha de inicio del filtro.
+        fecha_fin (date): Fecha de fin del filtro.
+        
+    Returns:
+        Workbook: Objeto libro de Excel listo para guardar.
     """
     wb = Workbook()
     ws = wb.active
@@ -202,7 +214,10 @@ def crear_libro_excel_seccion_a(fecha_inicio, fecha_fin):
 
 def crear_libro_excel_seccion_b(fecha_inicio, fecha_fin):
     """
-    Exporta Sección B: Interrupción del Embarazo (Abortos)
+    Genera el reporte Excel para la Sección B: Interrupción del Embarazo (Abortos/IVE).
+    
+    Args:
+        fecha_inicio, fecha_fin: Rango de fechas para filtrar por 'fecha_derivacion'.
     """
     wb = Workbook()
     ws = wb.active
@@ -296,7 +311,9 @@ def crear_libro_excel_seccion_b(fecha_inicio, fecha_fin):
 
 def crear_libro_excel_seccion_c(fecha_inicio, fecha_fin):
     """
-    Exporta Sección C: Métodos Anticonceptivos al Alta
+    Genera el reporte Excel para la Sección C: Métodos Anticonceptivos al Alta.
+    
+    Calcula la cobertura de anticoncepción en puérperas antes del egreso.
     """
     wb = Workbook()
     ws = wb.active
@@ -389,7 +406,9 @@ def crear_libro_excel_seccion_c(fecha_inicio, fecha_fin):
 
 def crear_libro_excel_seccion_d(fecha_inicio, fecha_fin):
     """
-    Exporta Sección D: Información de Recién Nacidos
+    Genera el reporte Excel para la Sección D: Información de Recién Nacidos.
+    
+    Incluye estadísticas de: Sexo, Apgar, Peso, Talla, Lactancia y Apego.
     """
     wb = Workbook()
     ws = wb.active
@@ -544,7 +563,14 @@ def crear_libro_excel_seccion_d(fecha_inicio, fecha_fin):
 
 def descargar_excel_response(wb, nombre_archivo):
     """
-    Genera una respuesta HTTP para descargar un archivo Excel.
+    Función utilitaria para convertir un libro de OpenPyXL en una respuesta HTTP descargable.
+    
+    Args:
+        wb (Workbook): Libro de Excel generado.
+        nombre_archivo (str): Nombre con el que se descargará el archivo (ej: 'reporte.xlsx').
+        
+    Returns:
+        HttpResponse: Respuesta con el tipo de contenido correcto para Excel.
     """
     output = BytesIO()
     wb.save(output)

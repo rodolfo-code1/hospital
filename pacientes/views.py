@@ -1,3 +1,4 @@
+# hospital/pacientes/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -16,35 +17,43 @@ from django.http import HttpResponse
 from usuarios.decorators import rol_requerido
 from django.urls import reverse
 from simple_history.utils import update_change_reason
-# ==========================================
-# VISTA RECEPCIONISTA: ADMISIÓN + ALERTA
-# ==========================================
 
+# ==========================================
+# SECCIÓN 1: VISTA DE RECEPCIÓN (ADMISIÓN)
+# ==========================================
 
 @login_required
 def registrar_madre_recepcion(request):
-
+    """
+    Vista principal de Admisión. 
+    Permite registrar una nueva paciente y clasificar su riesgo (Triage).
+    
+    Lógica de Notificación (Semáforo):
+    - Si el estado es 'Crítico' (Rojo) o 'Observación' (Amarillo), o si se escribe
+      una alerta de texto, el sistema envía una Notificación URGENTE a todas las matronas.
+    - Si es 'Sano' (Verde), envía una notificación informativa.
+    """
     if request.method == 'POST':
         form = MadreRecepcionForm(request.POST)
     
         if form.is_valid():
+            # Guardamos sin commit para asignar el usuario creador
             madre = form.save(commit=False)
             madre.creado_por = request.user
             madre.save()
             
-            # --- LÓGICA DE NOTIFICACIÓN SEMÁFORO ---
+            # --- INICIO LÓGICA DE NOTIFICACIÓN SEMÁFORO ---
             
-            # 1. Obtener el estado del semáforo
+            # 1. Obtener datos de riesgo
             estado_semaforo = madre.estado_salud # 'sano', 'observacion', 'critico'
             texto_alerta = madre.alerta_recepcion
             
-            # 2. Determinar Urgencia
-            # Es urgente si hay texto de alerta O si el semáforo es Rojo/Amarillo
+            # 2. Determinar prioridad de la notificación
+            # Es urgente si hay alerta escrita O si el color es rojo/amarillo
             es_urgente = bool(texto_alerta) or estado_semaforo in ['critico', 'observacion']
-            
             tipo_noti = 'urgente' if es_urgente else 'info'
             
-            # 3. Título dinámico con iconos
+            # 3. Construcción del título dinámico
             if estado_semaforo == 'critico':
                 titulo_noti = "🔴 INGRESO CRÍTICO (ALTO RIESGO)"
             elif estado_semaforo == 'observacion':
@@ -52,12 +61,12 @@ def registrar_madre_recepcion(request):
             else:
                 titulo_noti = "🟢 Nuevo Ingreso (Baja Complejidad)"
             
-            # 4. Cuerpo del mensaje
+            # 4. Construcción del mensaje
             mensaje_texto = f"Paciente: {madre.nombre}\nRUT: {madre.rut}"
             if texto_alerta:
                 mensaje_texto += f"\n⚠️ OBS: {texto_alerta}"
             
-            # 5. Enviar a Matronas
+            # 5. Envío masivo a todas las Matronas
             matronas = Usuario.objects.filter(rol='matrona')
             notificaciones = []
             for matrona in matronas:
@@ -66,10 +75,10 @@ def registrar_madre_recepcion(request):
                     titulo=titulo_noti,
                     mensaje=mensaje_texto,
                     tipo=tipo_noti,
-                    link=f"/pacientes/completar/{madre.pk}/"
+                    link=f"/pacientes/completar/{madre.pk}/" # Link directo a la ficha
                 ))
             Notificacion.objects.bulk_create(notificaciones)
-            # ---------------------------------------
+            # --- FIN LÓGICA NOTIFICACIÓN ---
 
             messages.success(request, f'Paciente ingresada con clasificación {madre.get_estado_salud_display()}.')
             return redirect('app:home')
@@ -84,7 +93,9 @@ def registrar_madre_recepcion(request):
 
 
 def crear_notificacion_ingreso(madre, reingreso=False):
-    """Auxiliar para notificar a matronas"""
+    """
+    Función auxiliar para generar notificaciones (utilizada en otros contextos de reingreso).
+    """
     tiene_alerta = bool(madre.alerta_recepcion)
     tipo = 'urgente' if tiene_alerta else 'info'
     titulo = "🚨 ALERTA INGRESO" if tiene_alerta else ("🔄 REINGRESO" if reingreso else "Nuevo Ingreso")
@@ -97,36 +108,37 @@ def crear_notificacion_ingreso(madre, reingreso=False):
 
 
 # ==========================================
-# GESTIÓN CLÍNICA (MATRONA) - LISTADO FILTRADO
+# SECCIÓN 2: GESTIÓN CLÍNICA (MATRONA)
 # ==========================================
 
 @login_required
 def lista_pacientes(request):
     """
-    Listado de trabajo para la Matrona.
-    Muestra pacientes hospitalizadas que AÚN requieren atención (Parto o Completar ficha).
-    EXCLUYE:
-    1. Pacientes con Aborto/IVE ya resuelto por el médico.
-    2. Pacientes que ya tienen Recién Nacido registrado en este ingreso.
+    Lista de Trabajo Principal para la Matrona.
+    
+    Lógica de Filtrado Inteligente:
+    Muestra SOLO pacientes hospitalizadas que requieren acción clínica.
+    Se ocultan automáticamente aquellas que:
+    1. Ya tienen un evento de Aborto/IVE resuelto por el médico (confirmado).
+    2. Ya dieron a luz y tienen al Recién Nacido registrado en el sistema.
     """
-    # 1. Base: Solo las que están en el hospital
+    # 1. Base: Solo pacientes activos en el hospital
     madres = Madre.objects.filter(estado_alta='hospitalizado').order_by('-fecha_ingreso')
     
-    # 2. Filtrado Lógico (Python) para excluir casos resueltos
+    # 2. Filtrado Lógico en Python
     madres_pendientes = []
     
     for m in madres:
-        # A. Verificar si tiene Aborto Resuelto (Confirmado) en este ingreso
+        # A. Excluir si tiene Aborto ya resuelto en este ingreso
         tiene_aborto_listo = m.abortos.filter(
             estado='confirmado',
             fecha_derivacion__gte=m.fecha_ingreso
         ).exists()
         
         if tiene_aborto_listo:
-            continue # Saltamos esta madre (ya la atiende el médico o está lista)
+            continue # Paciente gestionada, no mostrar en lista de pendientes
 
-        # B. Verificar si ya tiene Parto con Recién Nacido en este ingreso
-        # (Buscamos partos desde que ingresó y vemos si tienen hijos)
+        # B. Excluir si ya tiene Parto + Recién Nacido registrado
         tiene_rn_listo = False
         partos_ingreso = m.partos.filter(fecha_registro__gte=m.fecha_ingreso)
         for p in partos_ingreso:
@@ -135,12 +147,12 @@ def lista_pacientes(request):
                 break
         
         if tiene_rn_listo:
-            continue # Saltamos esta madre (ya dio a luz y se registró al bebé)
+            continue # Ciclo de parto completo, no mostrar
 
-        # Si pasa los filtros, la agregamos a la lista
+        # Si pasa los filtros, es una paciente pendiente
         madres_pendientes.append(m)
 
-    # 3. Búsqueda en la lista filtrada
+    # 3. Búsqueda manual por nombre o RUT dentro de la lista filtrada
     query = request.GET.get('q')
     if query:
         query = query.lower()
@@ -150,33 +162,36 @@ def lista_pacientes(request):
         ]
         
     return render(request, 'pacientes/lista_pacientes.html', {
-        'madres': madres_pendientes, # Pasamos la lista filtrada
+        'madres': madres_pendientes,
         'query': query
     })
 
 
 @login_required
 def ver_ficha_clinica(request, pk):
+    """Vista de solo lectura de la ficha clínica."""
     madre = get_object_or_404(Madre, pk=pk)
     form = MadreForm(instance=madre)
+    # Deshabilitar todos los campos para modo lectura
     for field in form.fields.values(): field.widget.attrs['disabled'] = True
     return render(request, 'pacientes/ver_ficha.html', {'form': form, 'madre': madre, 'titulo': 'Ficha Clínica'})
 
-# hospital/pacientes/views.py
 
 @login_required
 def editar_ficha_clinica(request, pk):
+    """
+    Vista para editar datos de la paciente.
+    Usa el formulario de recepción para permitir actualizar el semáforo de riesgo.
+    """
     madre = get_object_or_404(Madre, pk=pk)
     
     if request.method == 'POST':
-        # USAMOS MadreRecepcionForm AQUÍ PARA QUE APAREZCA EL SEMÁFORO
         form = MadreRecepcionForm(request.POST, instance=madre)
         if form.is_valid():
             form.save()
             messages.success(request, 'Ficha actualizada correctamente.')
             return redirect('pacientes:ver_ficha', pk=madre.pk)
     else:
-        # AQUÍ TAMBIÉN CAMBIAMOS EL FORMULARIO
         form = MadreRecepcionForm(instance=madre)
     
     return render(request, 'pacientes/registrar_madre.html', {
@@ -184,7 +199,8 @@ def editar_ficha_clinica(request, pk):
         'titulo': 'Editar Ficha', 
         'subtitulo': f'{madre.nombre}'
     })
-# Compatibilidad
+
+# --- Redirecciones de compatibilidad para URLs antiguas ---
 @login_required
 def registrar_madre(request): return redirect('pacientes:admision_madre')
 @login_required
@@ -196,18 +212,15 @@ def completar_madre(request, pk): return redirect('pacientes:ver_ficha', pk=pk)
 @login_required
 def historial_recepcion(request):
     """
-    Vista para que la Recepción revise el historial de ingresos.
-    Muestra todos los pacientes, su estado y permite buscar.
+    Vista histórica para personal de admisión.
+    Muestra todos los ingresos sin filtros de estado, para auditoría o consultas.
     """
-    # Verificación básica de rol
     if request.user.rol not in ['recepcionista', 'encargado_ti']:
          messages.error(request, "Acceso restringido a personal de admisión.")
          return redirect('app:home')
 
-    # Traer todas las madres ordenadas por fecha (más nuevas primero)
     madres = Madre.objects.all().order_by('-fecha_ingreso')
     
-    # Buscador
     query = request.GET.get('q')
     if query:
         madres = madres.filter(
@@ -221,23 +234,21 @@ def historial_recepcion(request):
     })
 
 # ==========================================
-# GESTIÓN DE IDENTIFICACIÓN (ADMINISTRATIVO)
+# SECCIÓN 3: GESTIÓN ADMINISTRATIVA (QR)
 # ==========================================
 
 @login_required
 @rol_requerido('administrativo')
 def admin_buscar_paciente(request):
     """
-    Buscador de pacientes para Generar QR.
-    FILTRO: Solo muestra pacientes ACTIVAS (Hospitalizadas o con Alta Médica pendiente).
-    Oculta las que ya tienen 'Alta Administrativa' completa.
+    Buscador específico para Administrativos.
+    Objetivo: Generar brazaletes QR e identificación.
+    Filtro: Solo muestra pacientes que AÚN no han egresado administrativamente.
     """
-    # Excluimos a las que ya se fueron (Alta Administrativa)
     madres = Madre.objects.exclude(
         estado_alta='alta_administrativa'
     ).order_by('-fecha_ingreso')
     
-    # Lógica de búsqueda por RUT o Nombre
     query = request.GET.get('q')
     if query:
         madres = madres.filter(
@@ -253,21 +264,18 @@ def admin_buscar_paciente(request):
 @login_required
 @rol_requerido('administrativo',)
 def ver_brazalete(request, pk):
-    """
-    Vista previa del brazalete listo para imprimir.
-    """
+    """Vista previa para impresión del brazalete de identificación."""
     madre = get_object_or_404(Madre, pk=pk)
     return render(request, 'pacientes/brazalete.html', {'madre': madre})
 
 @login_required
 def ficha_qr_madre(request, pk):
     """
-    Vista móvil que se abre al escanear el QR.
-    Muestra datos de la madre y sus partos/hijos asociados.
+    Ficha digital móvil.
+    Es la vista que se abre al escanear el QR del brazalete.
+    Muestra resumen clínico y los hijos asociados.
     """
     madre = get_object_or_404(Madre, pk=pk)
-    
-    # Traemos los partos y sus hijos para mostrarlos en la ficha
     partos = madre.partos.all().prefetch_related('recien_nacidos').order_by('-fecha_hora_inicio')
     
     return render(request, 'pacientes/ficha_qr_madre.html', {
@@ -278,15 +286,16 @@ def ficha_qr_madre(request, pk):
 @login_required
 def generar_qr_imagen(request, pk):
     """
-    Genera QR que apunta a la URL de la ficha digital de la madre.
+    Genera dinámicamente una imagen PNG con el código QR.
+    El QR contiene la URL absoluta hacia la 'ficha_qr_madre'.
     """
     madre = get_object_or_404(Madre, pk=pk)
     
-    # 1. Construir la URL completa
+    # 1. Construir URL interna
     path_relativo = reverse('pacientes:ficha_qr_madre', args=[pk])
     url_completa = request.build_absolute_uri(path_relativo)
     
-    # 2. Crear QR con la URL
+    # 2. Generar imagen QR en memoria
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_M,
@@ -301,29 +310,26 @@ def generar_qr_imagen(request, pk):
     img.save(buffer)
     return HttpResponse(buffer.getvalue(), content_type="image/png")
 
-# hospital/pacientes/views.py
-from simple_history.utils import update_change_reason
+
+# ==========================================
+# SECCIÓN 4: AUDITORÍA DE USUARIO
+# ==========================================
 
 @login_required
 def historial_trabajo_matrona(request):
     """
-    Muestra TODAS las pacientes que la matrona ha tocado (editado),
-    independiente de quién las creó originalmente.
+    Historial personal de la Matrona (Mi Trabajo).
+    Muestra todos los pacientes que el usuario ha 'tocado' (creado o editado).
+    Utiliza django-simple-history para rastrear la participación.
     """
-    # 1. Consultamos la tabla histórica (HistoricalMadre)
-    # Buscamos registros donde el usuario del historial sea la matrona actual.
-    # .values_list('id', flat=True) nos da solo los IDs de las madres (ej: [1, 5, 20])
-    # .distinct() elimina duplicados (si editó 10 veces a la misma paciente, solo queremos el ID una vez)
-    
+    # 1. Buscar IDs de madres donde el usuario actual aparece en el historial
     ids_gestionados = Madre.history.filter(
         history_user=request.user
     ).values_list('id', flat=True).distinct()
     
-    # 2. Con esos IDs, buscamos las fichas reales en la tabla Madre
-    # Usamos id__in=... para filtrar solo las encontradas arriba
+    # 2. Recuperar los objetos reales
     pacientes = Madre.objects.filter(id__in=ids_gestionados).order_by('-fecha_actualizacion')
     
-    # 3. Renderizamos la misma lista que ya tienes diseñada
     context = {
         'madres': pacientes,
         'titulo': 'Mi Historial de Atenciones',

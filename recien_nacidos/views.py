@@ -1,3 +1,4 @@
+# hospital/recien_nacidos/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -12,12 +13,15 @@ from django.urls import reverse
 
 @login_required
 def registrar_recien_nacido(request):
-    """Vista para registrar un recién nacido"""
+    """
+    Vista principal para el ingreso del Recién Nacido (Matrona).
+    Guarda los datos clínicos, calcula Apgar y asigna el código único.
+    """
     if request.method == 'POST':
         form = RecienNacidoForm(request.POST)
         if form.is_valid():
             rn = form.save(commit=False)
-            rn.creado_por = request.user
+            rn.creado_por = request.user # Auditoría
             rn.save()
             
             messages.success(
@@ -39,7 +43,9 @@ def registrar_recien_nacido(request):
 @rol_requerido('administrativo', 'jefatura')
 def admin_buscar_rn(request):
     """
-    Buscador de Recién Nacidos para generar brazaletes.
+    Buscador administrativo para gestión de identificación.
+    Permite encontrar un RN por su código único, o por el nombre/rut de la madre.
+    Utilizado para reimprimir brazaletes o verificar identidades.
     """
     query = request.GET.get('q')
     rns = RecienNacido.objects.all().select_related('parto__madre').order_by('-fecha_registro')
@@ -59,47 +65,54 @@ def admin_buscar_rn(request):
 @login_required
 @rol_requerido('administrativo', 'jefatura')
 def ver_brazalete_rn(request, pk):
-    """Vista previa del brazalete del bebé"""
+    """
+    Vista previa de impresión del brazalete de identificación del bebé.
+    Muestra datos críticos: Nombre Madre, Fecha Nacimiento, Sexo, Código Único.
+    """
     rn = get_object_or_404(RecienNacido, pk=pk)
     return render(request, 'recien_nacidos/brazalete_rn.html', {'rn': rn})
 
 @login_required
 def ficha_qr(request, pk):
     """
-    Vista optimizada para móviles. Muestra el resumen clínico Madre-Hijo.
-    Requiere login por seguridad (Ley de derechos del paciente).
+    Ficha Digital Móvil (Destino del escaneo QR).
+    Muestra un resumen clínico rápido del binomio Madre-Hijo.
+    Requiere autenticación para proteger la privacidad del paciente.
     """
     rn = get_object_or_404(RecienNacido, pk=pk)
-    # No necesitamos buscar a la madre aparte, accedemos por rn.parto.madre
+    # Se accede a los datos de la madre a través de la relación: rn.parto.madre
     
     return render(request, 'recien_nacidos/ficha_qr.html', {'rn': rn})
 
 
 # ==========================================
-# GENERADOR QR ACTUALIZADO (AHORA GUARDA URL)
+# GENERADOR QR DINÁMICO
 # ==========================================
 @login_required
 def generar_qr_rn(request, pk):
     """
-    Genera QR que apunta a la URL de la ficha digital.
+    Genera una imagen PNG con un código QR al vuelo.
+    Este QR contiene la URL única que dirige a la 'ficha_qr' del bebé.
     """
     rn = get_object_or_404(RecienNacido, pk=pk)
     
-    # 1. Construir la URL completa (ej: http://192.168.1.5:8000/recien-nacidos/ficha-qr/15/)
-    # request.build_absolute_uri convierte la ruta relativa en una URL completa con dominio/IP
+    # 1. Construir la URL absoluta
+    # reverse() obtiene la ruta relativa (/ficha/123/)
+    # request.build_absolute_uri() le agrega el dominio (http://dominio.com/ficha/123/)
     path_relativo = reverse('recien_nacidos:ficha_qr', args=[pk])
     url_completa = request.build_absolute_uri(path_relativo)
     
-    # 2. Crear QR con la URL
+    # 2. Configurar y generar QR
     qr = qrcode.QRCode(
         version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_M, # M = 15% error correction (mejor para escaneo rápido)
+        error_correction=qrcode.constants.ERROR_CORRECT_M, # M = Nivel medio, robusto a daños
         box_size=10,
         border=4,
     )
     qr.add_data(url_completa)
     qr.make(fit=True)
 
+    # 3. Renderizar imagen en memoria (Buffer) para enviar como respuesta HTTP
     img = qr.make_image(fill_color="black", back_color="white")
     buffer = BytesIO()
     img.save(buffer)

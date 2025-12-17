@@ -1,11 +1,16 @@
+# hospital/recien_nacidos/forms.py
 from django import forms
 from .models import RecienNacido
 from partos.models import Parto
 
 class RecienNacidoForm(forms.ModelForm):
     """
-    Formulario de RN con filtro inteligente.
-    Solo permite registrar bebés en partos de madres que siguen hospitalizadas.
+    Formulario de ingreso clínico del Recién Nacido.
+    
+    Características:
+    - Filtro de Partos: Solo permite seleccionar partos de madres que aún están hospitalizadas.
+    - Widgets Apgar: Usa botones de opción (RadioSelect) para agilizar el ingreso en tabletas/móviles.
+    - Campos de sólo lectura: Los totales de Apgar se muestran pero no se editan (se calculan vía JS/Backend).
     """
     
     class Meta:
@@ -23,13 +28,14 @@ class RecienNacidoForm(forms.ModelForm):
         ]
         widgets = {
             'parto': forms.Select(attrs={'class': 'form-select'}),
-            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Opcional'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Opcional (Ej: Hijo de...)'}),
             'sexo': forms.Select(attrs={'class': 'form-select'}),
             'peso': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.001', 'placeholder': 'kg'}),
             'talla': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': 'cm'}),
             'perimetro_cefalico': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1', 'placeholder': 'cm'}),
             
-            # WIDGETS APGAR (Radio buttons)
+            # WIDGETS APGAR: Clases CSS 'ap1-calc' y 'ap5-calc' son usadas por JavaScript
+            # para sumar los puntos en tiempo real en el frontend.
             'ap1_latidos': forms.RadioSelect(attrs={'class': 'ap1-calc'}),
             'ap1_respiracion': forms.RadioSelect(attrs={'class': 'ap1-calc'}),
             'ap1_tono': forms.RadioSelect(attrs={'class': 'ap1-calc'}),
@@ -42,11 +48,13 @@ class RecienNacidoForm(forms.ModelForm):
             'ap5_reflejos': forms.RadioSelect(attrs={'class': 'ap5-calc'}),
             'ap5_color': forms.RadioSelect(attrs={'class': 'ap5-calc'}),
 
+            # Campos de total en gris (readonly)
             'apgar_1_min': forms.NumberInput(attrs={'class': 'form-control fw-bold text-center bg-light', 'readonly': True}),
             'apgar_5_min': forms.NumberInput(attrs={'class': 'form-control fw-bold text-center bg-light', 'readonly': True}),
             'apgar_10_min': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '10'}),
             'condicion_nacimiento': forms.Select(attrs={'class': 'form-select'}),
             
+            # Checkboxes estilizados
             'lactancia_precoz': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'apego_piel_a_piel': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'profilaxis_ocular': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -61,6 +69,10 @@ class RecienNacidoForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        """
+        Inicializa el formulario aplicando filtros de negocio.
+        Solo muestra partos recientes de madres que no han sido dadas de alta.
+        """
         super().__init__(*args, **kwargs)
         
         self.fields['parto'].queryset = Parto.objects.filter(
@@ -70,10 +82,12 @@ class RecienNacidoForm(forms.ModelForm):
         self.fields['parto'].empty_label = "Seleccione Parto de Madre Activa..."
 
     def clean_parto(self):
-        """Validación de seguridad extra"""
+        """
+        Validación de seguridad adicional:
+        Impide registrar un RN si la madre ya fue dada de alta (evita incoherencias).
+        """
         parto = self.cleaned_data.get('parto')
         if parto:
-            # Si alguien intenta trucar el formulario o usar uno viejo
             if parto.madre.estado_alta != 'hospitalizado':
                 raise forms.ValidationError(
                     f"La madre {parto.madre.nombre} ya fue dada de alta. No se pueden registrar más hijos a este parto."

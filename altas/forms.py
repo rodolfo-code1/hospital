@@ -4,8 +4,14 @@ from pacientes.models import Madre
 from partos.models import Parto
 from recien_nacidos.models import RecienNacido
 
-# (CrearAltaForm se mantiene igual)
 class CrearAltaForm(forms.ModelForm):
+    """
+    Formulario utilizado por Médicos para iniciar un nuevo proceso de alta.
+    
+    Características clave:
+    - Filtra los pacientes en los selectores para mostrar SOLO los hospitalizados.
+    - Evita errores humanos al no mostrar pacientes que ya se fueron.
+    """
     class Meta:
         model = Alta
         fields = ['madre', 'parto', 'recien_nacido', 'observaciones']
@@ -17,6 +23,9 @@ class CrearAltaForm(forms.ModelForm):
         }
     
     def __init__(self, *args, **kwargs):
+        """
+        Inicializa el formulario y aplica filtros de seguridad a los QuerySets.
+        """
         super().__init__(*args, **kwargs)
         self.fields['madre'].queryset = Madre.objects.filter(estado_alta='hospitalizado', estado_salud='sano')
         self.fields['recien_nacido'].queryset = RecienNacido.objects.filter(estado_alta='hospitalizado', estado_salud='sano')
@@ -29,6 +38,10 @@ class CrearAltaForm(forms.ModelForm):
         self.fields['recien_nacido'].label = "Seleccionar Recién Nacido (Sano)"
 
     def clean(self):
+        """
+        Validación personalizada: Asegura que el alta no esté vacía.
+        Debe haber al menos una Madre o un Recién Nacido seleccionado.
+        """
         cleaned_data = super().clean()
         if not cleaned_data.get('madre') and not cleaned_data.get('recien_nacido'):
             raise forms.ValidationError("Debe seleccionar al menos un paciente.")
@@ -37,7 +50,8 @@ class CrearAltaForm(forms.ModelForm):
 
 class ConfirmarAltaClinicaForm(forms.Form):
     """
-    Formulario actualizado: Auto-firma médica y registro de Anticonceptivos.
+    Formulario para la firma digital del Médico.
+    Incluye la captura de datos de anticoncepción (vital para reportes REM).
     """
     confirmar_alta_clinica = forms.BooleanField(
         required=True, 
@@ -65,7 +79,6 @@ class ConfirmarAltaClinicaForm(forms.Form):
         label="Método Seleccionado",
         widget=forms.Select(attrs={'class': 'form-select', 'id': 'select_mac', 'disabled': 'true'})
     )
-    # -------------------------------
     
     observaciones_clinicas = forms.CharField(
         required=False, 
@@ -75,11 +88,19 @@ class ConfirmarAltaClinicaForm(forms.Form):
 
 
 class ConfirmarAltaAdministrativaForm(forms.Form):
+    """
+    Formulario para el cierre administrativo (Admisión/Recaudación).
+    Confirma que no hay deudas o trámites pendientes.
+    """
     confirmar_alta_administrativa = forms.BooleanField(required=True, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
     administrativo_nombre = forms.CharField(max_length=200, required=True, widget=forms.TextInput(attrs={'class': 'form-control bg-light', 'readonly': 'readonly'}))
     observaciones_administrativas = forms.CharField(required=False, widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}))
 
 class BuscarAltaForm(forms.Form):
+    """
+    Buscador para filtrar el listado histórico de altas.
+    Permite buscar por nombre/rut y filtrar por estado o rango de fechas.
+    """
     ESTADO_CHOICES = [('', 'Todos')] + list(Alta.ESTADO_ALTA)
     buscar = forms.CharField(required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Buscar...'}))
     estado = forms.ChoiceField(required=False, choices=ESTADO_CHOICES, widget=forms.Select(attrs={'class': 'form-select'}))

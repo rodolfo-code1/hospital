@@ -1,10 +1,23 @@
-# pacientes/models.py
+# hospital/pacientes/models.py
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 from simple_history.models import HistoricalRecords
 
 class Madre(models.Model):
+    """
+    Modelo principal de Paciente (Madre/Gestante).
+    
+    Este modelo almacena toda la información demográfica, obstétrica y de contacto.
+    Es el núcleo del sistema, ya que los Partos, Recién Nacidos y Altas se vinculan aquí.
+    
+    Características:
+    - Validación de edad (10-60 años).
+    - Gestión de estados de flujo (Hospitalizado -> Alta Médica -> Alta Administrativa).
+    - Semáforo de riesgo (Sano / Observación / Crítico) para notificaciones.
+    """
+    
+    # Opciones de previsión de salud para reportes administrativos
     PREVISION_CHOICES = [
         ('fonasa_a', 'FONASA A'),
         ('fonasa_b', 'FONASA B'),
@@ -15,22 +28,25 @@ class Madre(models.Model):
         ('otra', 'OTRA'),
     ]
 
+    # Identificación única nacional
     rut = models.CharField(max_length=12, unique=True, verbose_name="RUT", help_text="Ej: 12.345.678-9")
     nombre = models.CharField(max_length=200, verbose_name="Nombre completo")
     
     # --- DATOS DEMOGRÁFICOS (Planilla URNI) ---
     fecha_nacimiento = models.DateField(verbose_name="Fecha de Nacimiento", null=True, blank=True)
+    # Validadores para rango etario biológicamente probable en maternidad
     edad = models.IntegerField(validators=[MinValueValidator(10), MaxValueValidator(60)], verbose_name="Edad")
     nacionalidad = models.CharField(max_length=100, default="Chilena", verbose_name="Nacionalidad")
     prevision = models.CharField(max_length=20, choices=PREVISION_CHOICES, default='fonasa_b', verbose_name="Previsión")
     
+    # Datos de contacto y ubicación
     direccion = models.CharField(max_length=300, verbose_name="Dirección", blank=True)
     comuna = models.CharField(max_length=100, verbose_name="Comuna", blank=True)
     cesfam = models.CharField(max_length=150, verbose_name="CESFAM de Origen", blank=True, help_text="Centro de Salud Familiar")
-    
     telefono = models.CharField(max_length=15, verbose_name="Teléfono", blank=True)
     email = models.EmailField(blank=True, null=True, verbose_name="Correo electrónico")
     
+    # Campo crítico para el triage en recepción
     alerta_recepcion = models.TextField(
         blank=True, 
         verbose_name="Alerta de Ingreso", 
@@ -38,6 +54,7 @@ class Madre(models.Model):
     )
 
     # --- ANTECEDENTES OBSTÉTRICOS ---
+    # Datos clínicos previos relevantes para la atención del parto actual
     controles_prenatales = models.IntegerField(default=0, verbose_name="N° Controles")
     embarazos_anteriores = models.IntegerField(default=0, verbose_name="Para (Partos previos)")
     patologias = models.TextField(blank=True, verbose_name="Diagnósticos / Patologías", help_text="Ej: RNT 38 SEM AEG, HMD")
@@ -53,10 +70,11 @@ class Madre(models.Model):
         verbose_name="Registrado por"
     )
 
+    # --- ESTADOS DEL FLUJO ---
     ESTADO_ALTA = [
-        ('hospitalizado', 'Hospitalizado'),
-        ('alta_medica', 'Alta Médica (Esperando Admin)'),
-        ('alta_administrativa', 'Alta Completa (Egresado)'),
+        ('hospitalizado', 'Hospitalizado'),             # Paciente activa en sala
+        ('alta_medica', 'Alta Médica (Esperando Admin)'), # Médico firmó, espera cierre de cuenta
+        ('alta_administrativa', 'Alta Completa (Egresado)'), # Proceso finalizado
     ]
     estado_alta = models.CharField(
         max_length=20, 
@@ -64,10 +82,12 @@ class Madre(models.Model):
         default='hospitalizado',
         verbose_name="Estado Alta"
     )
+    
+    # --- SEMÁFORO DE RIESGO ---
     ESTADO_SALUD = [
-        ('sano', 'Sano / Alta Probable'),
-        ('observacion', 'En Observación'),
-        ('critico', 'Crítico / UCI'),
+        ('sano', 'Sano / Alta Probable'),   # Verde
+        ('observacion', 'En Observación'),  # Amarillo
+        ('critico', 'Crítico / UCI'),       # Rojo
     ]
     estado_salud = models.CharField(
         max_length=20, 
@@ -76,7 +96,7 @@ class Madre(models.Model):
         verbose_name="Estado de Salud"
     )
 
-    # Historial de cambios
+    # Historial de cambios (Auditoría automática de modificaciones)
     history = HistoricalRecords()
 
     class Meta:
@@ -88,4 +108,8 @@ class Madre(models.Model):
         return f"{self.nombre} ({self.rut})"
 
     def tiene_registros_completos(self):
+        """
+        Verifica si la ficha tiene los datos mínimos obligatorios para permitir un Alta.
+        Se usa en el módulo de Altas para el semáforo de validación.
+        """
         return all([self.nombre, self.rut, self.edad, self.comuna])
